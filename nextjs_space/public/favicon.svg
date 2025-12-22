@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#1a1a1a"/>
+  <path d="M128 32L64 64v64c0 40 28 76 64 96 36-20 64-56 64-96V64L128 32z" fill="#8B5CF6"/>
+  <circle cx="128" cy="100" r="8" fill="#a78bfa"/>
+  <line x1="128" y1="100" x2="128" y2="80" stroke="#a78bfa" stroke-width="2"/>
+  <line x1="128" y1="100" x2="108" y2="120" stroke="#a78bfa" stroke-width="2"/>
+  <line x1="128" y1="100" x2="148" y2="120" stroke="#a78bfa" stroke-width="2"/>
+  <circle cx="128" cy="80" r="4" fill="#c4b5fd"/>
+  <circle cx="108" cy="120" r="4" fill="#c4b5fd"/>
+  <circle cx="148" cy="120" r="4" fill="#c4b5fd"/>
+  <line x1="108" y1="120" x2="92" y2="136" stroke="#a78bfa" stroke-width="1.5"/>
+  <line x1="148" y1="120" x2="164" y2="136" stroke="#a78bfa" stroke-width="1.5"/>
+  <circle cx="92" cy="136" r="3" fill="#c4b5fd"/>
+  <circle cx="164" cy="136" r="3" fill="#c4b5fd"/>
+  <line x1="128" y1="100" x2="128" y2="140" stroke="#a78bfa" stroke-width="2"/>
+  <circle cx="128" cy="140" r="4" fill="#c4b5fd"/>
+  <line x1="128" y1="140" x2="112" y2="156" stroke="#a78bfa" stroke-width="1.5"/>
+  <line x1="128" y1="140" x2="144" y2="156" stroke="#a78bfa" stroke-width="1.5"/>
+  <circle cx="112" cy="156" r="3" fill="#c4b5fd"/>
+  <circle cx="144" cy="156" r="3" fill="#c4b5fd"/>
+</svg>
