@@ -58,6 +58,25 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             )}
           </div>
 
+          {article.isVideo && article.videoId && (
+            <div className="mb-8">
+              <div className="aspect-video w-full bg-gray-900 rounded-lg overflow-hidden shadow-2xl border border-purple-500/20">
+                <iframe
+                  src={`https://www.youtube.com/embed/${article.videoId}`}
+                  title={article.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              </div>
+              {article.channelName && (
+                <p className="text-sm text-gray-400 mt-4 flex items-center justify-center gap-2">
+                  <span className="font-medium text-purple-400">Channel:</span> {article.channelName}
+                </p>
+              )}
+            </div>
+          )}
+
           {article.aiSummary && (
             <div className="bg-purple-600/10 border border-purple-500/30 rounded-lg p-6 mb-8">
               <h2 className="text-lg font-bold text-purple-400 mb-2">Summary</h2>

@@ -42,6 +42,13 @@ export default function SubmitArticlePage() {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  
+  // Video-specific fields
+  const [isVideo, setIsVideo] = useState(false);
+  const [videoId, setVideoId] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [channelName, setChannelName] = useState('');
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -90,9 +97,34 @@ export default function SubmitArticlePage() {
         throw new Error(data.error || 'Failed to fetch article');
       }
 
-      const { title: extractedTitle, content } = await fetchRes.json();
+      const responseData = await fetchRes.json();
+      const { 
+        title: extractedTitle, 
+        content, 
+        isVideo: videoFlag,
+        videoId: vid,
+        thumbnailUrl: thumb,
+        channelName: channel,
+        publishedAt: pubDate,
+      } = responseData;
+      
       setTitle(extractedTitle);
       setRawContent(content);
+      
+      // Set video-specific fields if it's a YouTube video
+      if (videoFlag) {
+        setIsVideo(true);
+        setVideoId(vid || '');
+        setThumbnailUrl(thumb || '');
+        setChannelName(channel || '');
+        setPublishedAt(pubDate || null);
+      } else {
+        setIsVideo(false);
+        setVideoId('');
+        setThumbnailUrl('');
+        setChannelName('');
+        setPublishedAt(null);
+      }
 
       // Step 2: Generate AI summary
       setStep('summary');
@@ -269,6 +301,11 @@ export default function SubmitArticlePage() {
           aiFullPost,
           categoryIds: selectedCategoryIds,
           tagIds,
+          isVideo,
+          videoId: isVideo ? videoId : undefined,
+          thumbnailUrl: isVideo ? thumbnailUrl : undefined,
+          channelName: isVideo ? channelName : undefined,
+          publishedAt: publishedAt || undefined,
         }),
       });
 
@@ -378,6 +415,30 @@ export default function SubmitArticlePage() {
               onChange={(e) => setTitle(e.target.value)}
               className="mt-2 bg-gray-900/50 border-purple-500/30 text-white"
             />
+          </div>
+        )}
+
+        {/* Video Thumbnail Preview */}
+        {isVideo && thumbnailUrl && (
+          <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
+            <Label className="text-gray-300 mb-2 block">YouTube Video</Label>
+            <div className="aspect-video w-full max-w-lg mx-auto bg-gray-900 rounded-lg overflow-hidden">
+              <img 
+                src={thumbnailUrl} 
+                alt={title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {channelName && (
+              <p className="text-sm text-gray-400 mt-2 text-center">
+                Channel: {channelName}
+              </p>
+            )}
+            {publishedAt && (
+              <p className="text-sm text-gray-400 mt-1 text-center">
+                Published: {new Date(publishedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
         )}
 

@@ -83,7 +83,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, originalUrl, rawContent, aiSummary, aiFullPost, categoryIds, tagIds } = body;
+    const { 
+      title, 
+      originalUrl, 
+      rawContent, 
+      aiSummary, 
+      aiFullPost, 
+      categoryIds, 
+      tagIds,
+      isVideo,
+      videoId,
+      thumbnailUrl,
+      channelName,
+      publishedAt,
+    } = body;
 
     if (!title || !originalUrl) {
       return NextResponse.json(
@@ -100,6 +113,11 @@ export async function POST(request: NextRequest) {
         aiSummary,
         aiFullPost,
         status: 'DRAFT',
+        isVideo: isVideo || false,
+        videoId,
+        thumbnailUrl,
+        channelName,
+        publishedAt: publishedAt ? new Date(publishedAt) : undefined,
         categories: categoryIds
           ? {
               create: categoryIds.map((id: string) => ({

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
+import { isYouTubeUrl, fetchYouTubeMetadata, cleanYouTubeUrl } from '@/lib/youtube';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the webpage
+    // Check if it's a YouTube URL
+    if (isYouTubeUrl(url)) {
+      const metadata = await fetchYouTubeMetadata(url);
+      
+      if (!metadata) {
+        return NextResponse.json(
+          { error: 'Failed to fetch YouTube video metadata' },
+          { status: 422 }
+        );
+      }
+
+      const cleanUrl = cleanYouTubeUrl(url);
+
+      return NextResponse.json({
+        title: metadata.title,
+        content: metadata.description,
+        excerpt: metadata.description.slice(0, 200) + (metadata.description.length > 200 ? '...' : ''),
+        isVideo: true,
+        videoId: metadata.videoId,
+        thumbnailUrl: metadata.thumbnailUrl,
+        channelName: metadata.channelName,
+        publishedAt: metadata.publishDate,
+        originalUrl: cleanUrl || url,
+      });
+    }
+
+    // Regular article processing
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; PHPIContentHub/1.0)'
@@ -56,6 +83,7 @@ export async function POST(request: NextRequest) {
       title: article.title || 'Untitled',
       content: article.textContent || '',
       excerpt: article.excerpt || '',
+      isVideo: false,
     });
   } catch (error: any) {
     console.error('Error processing URL:', error);
