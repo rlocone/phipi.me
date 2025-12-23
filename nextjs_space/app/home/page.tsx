@@ -5,8 +5,36 @@ import ArticleCard from './_components/article-card';
 import StarredArticle from './_components/starred-article';
 import PublicHeader from './_components/public-header';
 import SearchBar from './_components/search-bar';
+import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'phipi | Love of Tech',
+  description: 'Your trusted source for cybersecurity, privacy, hardware, and AI insights. Discover the latest tech news and deep dives.',
+  openGraph: {
+    title: 'phipi | Love of Tech',
+    description: 'Your trusted source for cybersecurity, privacy, hardware, and AI insights. Discover the latest tech news and deep dives.',
+    url: 'https://phipi.me',
+    siteName: 'phipi',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'phipi | Love of Tech',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'phipi | Love of Tech',
+    description: 'Your trusted source for cybersecurity, privacy, hardware, and AI insights. Discover the latest tech news and deep dives.',
+    images: ['/og-image.png'],
+  },
+};
 
 export default async function HomePage() {
   const [starredArticle, articles, categories] = await Promise.all([
