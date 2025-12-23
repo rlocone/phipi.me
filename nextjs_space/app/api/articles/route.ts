@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
       thumbnailUrl,
       channelName,
       publishedAt,
+      images,
+      featuredImage,
     } = body;
 
     if (!title || !originalUrl) {
@@ -118,6 +120,8 @@ export async function POST(request: NextRequest) {
         thumbnailUrl,
         channelName,
         publishedAt: publishedAt ? new Date(publishedAt) : undefined,
+        images: images || [],
+        featuredImage: featuredImage || null,
         categories: categoryIds
           ? {
               create: categoryIds.map((id: string) => ({

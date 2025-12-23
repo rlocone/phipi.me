@@ -23,6 +23,25 @@ export default function StarredArticle({ article }: { article: any }) {
           </div>
         </Link>
       )}
+
+      {!article.isVideo && article.featuredImage && (
+        <Link href={`/article/${article.id}`}>
+          <div className="relative aspect-video w-full bg-gray-900 overflow-hidden group">
+            <img 
+              src={article.featuredImage} 
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                <span className="text-yellow-400 font-bold text-sm">Featured Article</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
       
       <div className="p-8">
         <div className="flex items-center gap-2 mb-4">

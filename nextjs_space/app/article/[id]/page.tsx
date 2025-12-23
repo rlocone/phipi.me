@@ -77,6 +77,35 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             </div>
           )}
 
+          {!article.isVideo && article.featuredImage && (
+            <div className="mb-8">
+              <div className="relative aspect-video w-full bg-gray-900 rounded-lg overflow-hidden shadow-2xl border border-purple-500/20">
+                <img 
+                  src={article.featuredImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+
+          {!article.isVideo && article.images && article.images.length > 1 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-purple-400 mb-4">Gallery</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {article.images.filter((img: string) => img !== article.featuredImage).map((imgUrl: string, index: number) => (
+                  <div key={index} className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-purple-500/20 hover:border-purple-500/50 transition-colors">
+                    <img 
+                      src={imgUrl}
+                      alt={`${article.title} - Image ${index + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {article.aiSummary && (
             <div className="bg-purple-600/10 border border-purple-500/30 rounded-lg p-6 mb-8">
               <h2 className="text-lg font-bold text-purple-400 mb-2">Summary</h2>

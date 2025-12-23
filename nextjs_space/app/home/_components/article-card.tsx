@@ -22,6 +22,19 @@ export default function ArticleCard({ article }: { article: any }) {
           </div>
         </Link>
       )}
+
+      {!article.isVideo && article.featuredImage && (
+        <Link href={`/article/${article.id}`}>
+          <div className="relative aspect-video w-full bg-gray-900 overflow-hidden group">
+            <img 
+              src={article.featuredImage} 
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </Link>
+      )}
       
       <div className="p-6">
         <Link href={`/article/${article.id}`}>

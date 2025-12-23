@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import { isYouTubeUrl, fetchYouTubeMetadata, cleanYouTubeUrl } from '@/lib/youtube';
+import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from '@/lib/image-extractor';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,14 @@ export async function POST(request: NextRequest) {
 
     const html = await response.text();
 
+    // Extract images before parsing
+    const contentImages = extractImagesFromHTML(html, url);
+    const metaImages = extractMetaImages(html);
+    const bestImages = getBestImages(contentImages, metaImages, 5);
+    
+    // Validate images (check if they're accessible)
+    const validImages = await getValidImages(bestImages);
+
     // Parse with Readability
     const dom = new JSDOM(html, { url });
     const reader = new Readability(dom.window.document);
@@ -84,6 +93,8 @@ export async function POST(request: NextRequest) {
       content: article.textContent || '',
       excerpt: article.excerpt || '',
       isVideo: false,
+      images: validImages,
+      featuredImage: validImages.length > 0 ? validImages[0] : null,
     });
   } catch (error: any) {
     console.error('Error processing URL:', error);

@@ -79,6 +79,10 @@ model Article {
   thumbnailUrl String?
   channelName  String?
   
+  // Article images
+  images       String[]          @default([])
+  featuredImage String?
+  
   categories   ArticleCategory[]
   tags         ArticleTag[]
 }

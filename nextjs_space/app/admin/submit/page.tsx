@@ -49,6 +49,10 @@ export default function SubmitArticlePage() {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [channelName, setChannelName] = useState('');
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  
+  // Image fields
+  const [images, setImages] = useState<string[]>([]);
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -106,6 +110,8 @@ export default function SubmitArticlePage() {
         thumbnailUrl: thumb,
         channelName: channel,
         publishedAt: pubDate,
+        images: extractedImages,
+        featuredImage: extractedFeatured,
       } = responseData;
       
       setTitle(extractedTitle);
@@ -118,12 +124,16 @@ export default function SubmitArticlePage() {
         setThumbnailUrl(thumb || '');
         setChannelName(channel || '');
         setPublishedAt(pubDate || null);
+        setImages([]);
+        setFeaturedImage(null);
       } else {
         setIsVideo(false);
         setVideoId('');
         setThumbnailUrl('');
         setChannelName('');
         setPublishedAt(null);
+        setImages(extractedImages || []);
+        setFeaturedImage(extractedFeatured || null);
       }
 
       // Step 2: Generate AI summary
@@ -306,6 +316,8 @@ export default function SubmitArticlePage() {
           thumbnailUrl: isVideo ? thumbnailUrl : undefined,
           channelName: isVideo ? channelName : undefined,
           publishedAt: publishedAt || undefined,
+          images: !isVideo ? images : undefined,
+          featuredImage: !isVideo ? featuredImage : undefined,
         }),
       });
 
@@ -439,6 +451,53 @@ export default function SubmitArticlePage() {
                 Published: {new Date(publishedAt).toLocaleDateString()}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Article Images Preview */}
+        {!isVideo && images.length > 0 && (
+          <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
+            <Label className="text-gray-300 mb-3 block">Extracted Images ({images.length})</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {images.map((imgUrl, index) => (
+                <div 
+                  key={index} 
+                  className={`relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                    featuredImage === imgUrl 
+                      ? 'border-purple-500 ring-2 ring-purple-500/50' 
+                      : 'border-gray-700 hover:border-purple-500/50'
+                  }`}
+                  onClick={() => setFeaturedImage(imgUrl)}
+                >
+                  <img 
+                    src={imgUrl} 
+                    alt={`Article image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  {featuredImage === imgUrl && (
+                    <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                      Featured
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-400 mt-3 text-center">
+              Click on an image to set it as the featured image
+            </p>
+          </div>
+        )}
+
+        {/* No Images Warning */}
+        {!isVideo && step === 'complete' && images.length === 0 && (
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 text-center">
+            <AlertCircle className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+            <p className="text-yellow-500 text-sm">
+              No images found in the article. Consider adding images manually or using AI generation.
+            </p>
           </div>
         )}
 
