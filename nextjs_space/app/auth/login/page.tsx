@@ -47,7 +47,7 @@ export default function LoginPage() {
             <div className="bg-purple-600/20 p-4 rounded-full mb-4">
               <Shield className="w-12 h-12 text-purple-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white">phpi | Love of Tech</h1>
+            <h1 className="text-2xl font-bold text-white">phipi | Love of Tech</h1>
             <p className="text-gray-400 text-sm mt-2">Content Hub Admin</p>
           </div>
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-gray-900/50 border-purple-500/30 text-white focus:border-purple-500"
-                  placeholder="admin@phpi.tech"
+                  placeholder="admin@phipi.tech"
                   required
                 />
               </div>

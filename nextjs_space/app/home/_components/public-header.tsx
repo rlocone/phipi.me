@@ -8,7 +8,7 @@ export default function PublicHeader() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/home" className="flex items-center space-x-2">
           <Shield className="w-6 h-6 text-purple-500" />
-          <span className="text-white font-bold text-lg">phpi | Love of Tech</span>
+          <span className="text-white font-bold text-lg">phipi | Love of Tech</span>
         </Link>
         <nav className="flex items-center space-x-6">
           <Link href="/home" className="text-gray-300 hover:text-purple-400 transition-colors">

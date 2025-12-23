@@ -131,7 +131,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
       <footer className="bg-gray-900/90 border-t border-purple-500/20 mt-16 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400">© 2024 phpi | Love of Tech. Powered by AI and passion for technology.</p>
+          <p className="text-gray-400">© 2024 phipi | Love of Tech. Powered by AI and passion for technology.</p>
         </div>
       </footer>
     </div>

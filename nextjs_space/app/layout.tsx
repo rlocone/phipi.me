@@ -6,14 +6,14 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'phpi | Love of Tech - Content Hub',
+  title: 'phipi | Love of Tech - Content Hub',
   description: 'Your trusted source for cybersecurity, privacy, hardware, and AI news',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
   },
   openGraph: {
-    title: 'phpi | Love of Tech - Content Hub',
+    title: 'phipi | Love of Tech - Content Hub',
     description: 'Your trusted source for cybersecurity, privacy, hardware, and AI news',
     images: ['/og-image.png'],
   },

@@ -55,7 +55,7 @@ async function main() {
       role: 'admin',
     },
     {
-      email: 'admin@phpi.tech',
+      email: 'admin@phipi.tech',
       password: 'SecureAdmin2024!',
       name: 'Admin User',
       role: 'admin',

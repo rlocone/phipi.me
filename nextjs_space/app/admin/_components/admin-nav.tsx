@@ -42,7 +42,7 @@ export default function AdminNav() {
         <div className="flex items-center justify-between h-16">
           <Link href="/admin" className="flex items-center space-x-2">
             <Shield className="w-6 h-6 text-purple-500" />
-            <span className="text-white font-bold text-lg">phpi Admin</span>
+            <span className="text-white font-bold text-lg">phipi Admin</span>
           </Link>
 
           {/* Desktop Navigation */}

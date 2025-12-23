@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Regular article processing
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PHPIContentHub/1.0)'
+        'User-Agent': 'Mozilla/5.0 (compatible; PHIPIContentHub/1.0)'
       }
     });
 
