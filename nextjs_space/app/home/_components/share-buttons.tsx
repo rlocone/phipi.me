@@ -2,7 +2,8 @@
 import { Twitter, Facebook, Linkedin, Share2 } from 'lucide-react';
 
 export default function ShareButtons({ article }: { article: any }) {
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/article/${article.id}` : '';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://phipi.me';
+  const shareUrl = `${baseUrl}/article/${article.id}`;
   const title = article.title;
 
   const handleShare = async () => {

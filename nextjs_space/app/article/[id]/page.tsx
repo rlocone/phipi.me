@@ -5,8 +5,68 @@ import PublicHeader from '@/app/home/_components/public-header';
 import ShareButtons from '@/app/home/_components/share-buttons';
 import ReactMarkdown from 'react-markdown';
 import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+// Generate dynamic metadata for social media sharing
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const article = await prisma.article.findUnique({
+    where: { id: params.id },
+    include: {
+      categories: { include: { category: true } },
+    },
+  });
+
+  if (!article || article.status !== 'APPROVED') {
+    return {
+      title: 'Article Not Found',
+      description: 'The requested article could not be found.',
+    };
+  }
+
+  // Get the best image for social media preview
+  const socialImage = article.isVideo && article.thumbnailUrl 
+    ? article.thumbnailUrl 
+    : article.featuredImage || '/og-image.png';
+
+  // Get description from AI summary or truncate raw content
+  const description = article.aiSummary 
+    || (article.rawContent?.substring(0, 160) + '...') 
+    || 'Read the full article on phipi | Love of Tech';
+
+  // Get categories for keywords
+  const categories = article.categories?.map((c: any) => c.category.name).join(', ') || 'Technology';
+
+  return {
+    title: `${article.title} | phipi`,
+    description,
+    keywords: categories,
+    openGraph: {
+      title: article.title,
+      description,
+      type: 'article',
+      url: `/article/${article.id}`,
+      siteName: 'phipi | Love of Tech',
+      publishedTime: article.publishedAt?.toISOString(),
+      authors: ['phipi'],
+      images: [
+        {
+          url: socialImage,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description,
+      images: [socialImage],
+    },
+  };
+}
 
 export default async function ArticlePage({ params }: { params: { id: string } }) {
   const article = await prisma.article.findUnique({
