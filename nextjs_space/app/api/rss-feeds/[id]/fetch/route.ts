@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
 import Parser from 'rss-parser';
+import { parseRssContent } from '@/lib/content-parser';
+import { fetchYouTubeMetadata } from '@/lib/youtube';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,14 +48,43 @@ export async function POST(
           continue; // Skip if already exists
         }
 
+        // Parse RSS content to detect videos and clean HTML
+        const rawContent = item.content || item.contentSnippet || '';
+        const parsed = parseRssContent(rawContent);
+        
+        // Prepare article data
+        const articleData: any = {
+          title: item.title || 'Untitled',
+          originalUrl: item.link,
+          rawContent: parsed.cleanText || rawContent,
+          status: 'DRAFT',
+          isVideo: parsed.isVideo,
+        };
+        
+        // If it's a YouTube video, fetch metadata
+        if (parsed.isVideo && parsed.videoId) {
+          try {
+            const videoMetadata = await fetchYouTubeMetadata(`https://www.youtube.com/watch?v=${parsed.videoId}`);
+            if (videoMetadata) {
+              articleData.videoId = parsed.videoId;
+              articleData.thumbnailUrl = videoMetadata.thumbnailUrl;
+              articleData.channelName = videoMetadata.channelName;
+              
+              // Use video title if RSS title is generic
+              if (videoMetadata.title && (!articleData.title || articleData.title === 'Untitled')) {
+                articleData.title = videoMetadata.title;
+              }
+            }
+          } catch (videoError) {
+            console.error(`Error fetching YouTube metadata for ${parsed.videoId}:`, videoError);
+            // Continue with basic video data
+            articleData.videoId = parsed.videoId;
+          }
+        }
+
         // Create new article in DRAFT status
         const article = await prisma.article.create({
-          data: {
-            title: item.title || 'Untitled',
-            originalUrl: item.link,
-            rawContent: item.content || item.contentSnippet || '',
-            status: 'DRAFT',
-          },
+          data: articleData,
         });
 
         articles.push(article);

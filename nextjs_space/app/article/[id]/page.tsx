@@ -113,17 +113,25 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             </div>
           )}
 
-          <div className="prose prose-invert prose-purple max-w-none mb-8">
-            {article.aiFullPost ? (
-              <div className="text-gray-300 leading-relaxed">
-                <ReactMarkdown>{article.aiFullPost}</ReactMarkdown>
-              </div>
-            ) : (
-              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {article.rawContent}
-              </p>
-            )}
-          </div>
+          {(article.aiFullPost || article.rawContent) && (
+            <div className="prose prose-invert prose-purple max-w-none mb-8">
+              {article.aiFullPost ? (
+                <div className="text-gray-300 leading-relaxed">
+                  <ReactMarkdown>{article.aiFullPost}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {article.rawContent}
+                </p>
+              )}
+            </div>
+          )}
+          
+          {article.isVideo && !article.aiFullPost && !article.rawContent && (
+            <div className="bg-purple-600/10 border border-purple-500/30 rounded-lg p-6 mb-8 text-center">
+              <p className="text-gray-400">Watch the video above for full content</p>
+            </div>
+          )}
 
           {article.tags?.length > 0 && (
             <div className="mb-8 pb-8 border-b border-purple-500/20">
