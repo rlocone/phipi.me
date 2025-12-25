@@ -3,6 +3,8 @@
  * Handles various YouTube URL formats and extracts video metadata
  */
 
+import { sanitizeUrl } from './url-sanitizer';
+
 export interface YouTubeVideoMetadata {
   videoId: string;
   title: string;
@@ -85,12 +87,14 @@ export async function getBestYouTubeThumbnail(videoId: string): Promise<string> 
 }
 
 /**
- * Clean YouTube URL to standard format
+ * Clean YouTube URL to standard format and remove tracking parameters
  */
 export function cleanYouTubeUrl(url: string): string | null {
   const videoId = extractYouTubeVideoId(url);
   if (!videoId) return null;
-  return `https://www.youtube.com/watch?v=${videoId}`;
+  const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  // Apply URL sanitization to remove any tracking parameters
+  return sanitizeUrl(cleanUrl);
 }
 
 /**

@@ -5,6 +5,8 @@ import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import { isYouTubeUrl, fetchYouTubeMetadata, cleanYouTubeUrl } from '@/lib/youtube';
 import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from '@/lib/image-extractor';
+import { sanitizeUrl, isNotionUrl } from '@/lib/url-sanitizer';
+import { fetchNotionPage } from '@/lib/notion';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url } = body;
+    let { url } = body;
 
     if (!url) {
       return NextResponse.json(
@@ -25,6 +27,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Sanitize URL to remove tracking parameters
+    url = sanitizeUrl(url);
 
     // Check if it's a YouTube URL
     if (isYouTubeUrl(url)) {
@@ -49,6 +54,28 @@ export async function POST(request: NextRequest) {
         channelName: metadata.channelName,
         publishedAt: metadata.publishDate,
         originalUrl: cleanUrl || url,
+      });
+    }
+
+    // Check if it's a Notion URL
+    if (isNotionUrl(url)) {
+      const notionData = await fetchNotionPage(url);
+      
+      if (!notionData) {
+        return NextResponse.json(
+          { error: 'Failed to fetch Notion page content' },
+          { status: 422 }
+        );
+      }
+
+      return NextResponse.json({
+        title: notionData.title,
+        content: notionData.content,
+        excerpt: notionData.excerpt,
+        isVideo: false,
+        images: notionData.images,
+        featuredImage: notionData.featuredImage,
+        originalUrl: notionData.originalUrl,
       });
     }
 
@@ -95,6 +122,7 @@ export async function POST(request: NextRequest) {
       isVideo: false,
       images: validImages,
       featuredImage: validImages.length > 0 ? validImages[0] : null,
+      originalUrl: url,
     });
   } catch (error: any) {
     console.error('Error processing URL:', error);
