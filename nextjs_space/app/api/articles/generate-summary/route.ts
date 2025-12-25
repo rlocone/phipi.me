@@ -18,8 +18,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { content, title } = body;
 
-    if (!content) {
-      return new Response(JSON.stringify({ error: 'Content is required' }), {
+    if (!content || content.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Content is required for summary generation' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if content is too short or is placeholder text
+    const trimmedContent = content.trim();
+    if (trimmedContent.length < 50) {
+      return new Response(JSON.stringify({ error: 'Content is too short to generate a meaningful summary. Please provide more content or use the AI generation tools.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if content contains Notion page instructions
+    if (trimmedContent.includes('This is a Notion page') || trimmedContent.includes('manual content entry required')) {
+      return new Response(JSON.stringify({ error: 'Please provide actual content instead of placeholder text. Use the "Generate Full Post" feature or manually enter content from the Notion page.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -35,7 +52,7 @@ export async function POST(request: NextRequest) {
         role: 'user',
         content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":
 
-${content.substring(0, 4000)}
+${trimmedContent.substring(0, 4000)}
 
 Provide only the summary, no additional commentary.`,
       },

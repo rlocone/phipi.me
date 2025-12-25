@@ -1,12 +1,14 @@
 /**
  * Notion Page Parser
  * Handles fetching and parsing content from Notion pages
+ * 
+ * Note: Notion pages are JavaScript-rendered SPAs. This parser extracts
+ * metadata and provides instructions for manual content entry.
  */
 
 import { JSDOM } from 'jsdom';
-import { Readability } from '@mozilla/readability';
 import { sanitizeUrl, getNotionPageId } from './url-sanitizer';
-import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from './image-extractor';
+import { extractMetaImages, getValidImages } from './image-extractor';
 
 export interface NotionPageData {
   title: string;
@@ -16,12 +18,40 @@ export interface NotionPageData {
   featuredImage: string | null;
   pageId: string | null;
   originalUrl: string;
+  requiresManualEntry?: boolean;
+}
+
+/**
+ * Extracts title from Notion page URL
+ */
+function extractTitleFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    
+    // Format: /{title}-{pageId}
+    const parts = pathname.split('/').filter(p => p);
+    if (parts.length > 0) {
+      const lastPart = parts[parts.length - 1];
+      const titlePart = lastPart.split('-').slice(0, -1).join('-');
+      if (titlePart) {
+        // Convert hyphenated title to readable format
+        return titlePart
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+    }
+    return 'Notion Page';
+  } catch {
+    return 'Notion Page';
+  }
 }
 
 /**
  * Fetches and parses a Notion page
  * @param url - Notion page URL
- * @returns Parsed page data
+ * @returns Parsed page data with instructions for manual entry
  */
 export async function fetchNotionPage(url: string): Promise<NotionPageData | null> {
   try {
@@ -29,7 +59,10 @@ export async function fetchNotionPage(url: string): Promise<NotionPageData | nul
     const cleanUrl = sanitizeUrl(url);
     const pageId = getNotionPageId(cleanUrl);
 
-    // Fetch the Notion page
+    // Extract title from URL
+    const title = extractTitleFromUrl(cleanUrl);
+
+    // Fetch the Notion page to get metadata
     const response = await fetch(cleanUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; PHIPIContentHub/1.0; +https://phipi.me)',
@@ -43,45 +76,34 @@ export async function fetchNotionPage(url: string): Promise<NotionPageData | nul
     }
 
     const html = await response.text();
-
-    // Extract images before parsing
-    const contentImages = extractImagesFromHTML(html, cleanUrl);
-    const metaImages = extractMetaImages(html);
-    const bestImages = getBestImages(contentImages, metaImages, 5);
-    
-    // Validate images (check if they're accessible)
-    const validImages = await getValidImages(bestImages);
-
-    // Parse with Readability
     const dom = new JSDOM(html, { url: cleanUrl });
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
 
-    if (!article) {
-      // Fallback: Try to extract content directly from Notion's structure
-      const fallbackContent = extractNotionContentFallback(dom.window.document);
-      if (fallbackContent) {
-        return {
-          title: fallbackContent.title || 'Untitled Notion Page',
-          content: fallbackContent.content || '',
-          excerpt: fallbackContent.content.slice(0, 200) + (fallbackContent.content.length > 200 ? '...' : ''),
-          images: validImages,
-          featuredImage: validImages.length > 0 ? validImages[0] : null,
-          pageId,
-          originalUrl: cleanUrl,
-        };
-      }
-      throw new Error('Failed to parse Notion page content');
+    // Extract meta images (OG images, Twitter cards)
+    const metaImages = extractMetaImages(html);
+    const validImages = await getValidImages(metaImages);
+
+    // Extract description from meta tags
+    let description = '';
+    const descMeta = dom.window.document.querySelector('meta[name="description"]');
+    const ogDescMeta = dom.window.document.querySelector('meta[property="og:description"]');
+    if (descMeta) {
+      description = descMeta.getAttribute('content') || '';
+    } else if (ogDescMeta) {
+      description = ogDescMeta.getAttribute('content') || '';
     }
 
+    // Since Notion pages are JS-rendered, provide a helpful message
+    const content = description || `This is a Notion page. Please copy and paste the content from the Notion page:\n\n${cleanUrl}\n\nYou can view the page in your browser and manually enter the content below, or use the AI generation tools to create content based on the title.`;
+
     return {
-      title: article.title || 'Untitled Notion Page',
-      content: article.textContent || '',
-      excerpt: article.excerpt || (article.textContent?.slice(0, 200) + (article.textContent && article.textContent.length > 200 ? '...' : '')) || '',
+      title,
+      content,
+      excerpt: description || 'Notion page - manual content entry required',
       images: validImages,
       featuredImage: validImages.length > 0 ? validImages[0] : null,
       pageId,
       originalUrl: cleanUrl,
+      requiresManualEntry: true,
     };
   } catch (error: any) {
     console.error('Error fetching Notion page:', error);
@@ -89,59 +111,4 @@ export async function fetchNotionPage(url: string): Promise<NotionPageData | nul
   }
 }
 
-/**
- * Fallback content extraction for Notion pages
- * Used when Readability fails to parse the page
- */
-function extractNotionContentFallback(document: Document): { title: string; content: string } | null {
-  try {
-    // Try to find the page title
-    let title = '';
-    const titleElement = document.querySelector('h1') || document.querySelector('title');
-    if (titleElement) {
-      title = titleElement.textContent?.trim() || '';
-    }
 
-    // Try to extract main content
-    let content = '';
-    
-    // Notion pages typically have content in specific containers
-    const contentSelectors = [
-      '.notion-page-content',
-      '[data-block-id]',
-      'main',
-      'article',
-      '.notion-frame',
-    ];
-
-    for (const selector of contentSelectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        content = element.textContent?.trim() || '';
-        if (content.length > 100) {
-          break;
-        }
-      }
-    }
-
-    // If still no content, try body
-    if (!content || content.length < 50) {
-      const body = document.querySelector('body');
-      if (body) {
-        content = body.textContent?.trim() || '';
-      }
-    }
-
-    // Clean up content
-    content = content.replace(/\s+/g, ' ').trim();
-
-    if (!title && !content) {
-      return null;
-    }
-
-    return { title, content };
-  } catch (error) {
-    console.error('Error in fallback content extraction:', error);
-    return null;
-  }
-}

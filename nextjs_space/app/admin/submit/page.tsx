@@ -457,7 +457,31 @@ export default function SubmitArticlePage() {
         {/* Article Images Preview */}
         {!isVideo && images.length > 0 && (
           <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
-            <Label className="text-gray-300 mb-3 block">Extracted Images ({images.length})</Label>
+            <div className="flex justify-between items-center mb-3">
+              <Label className="text-gray-300">Extracted Images ({images.length})</Label>
+              <div className="flex gap-2">
+                {featuredImage && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFeaturedImage(null)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    Clear Featured
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImages([])}
+                  className="text-gray-400 hover:text-white"
+                >
+                  Skip Images
+                </Button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {images.map((imgUrl, index) => (
                 <div 
@@ -493,11 +517,28 @@ export default function SubmitArticlePage() {
 
         {/* No Images Warning */}
         {!isVideo && step === 'complete' && images.length === 0 && (
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 text-center">
-            <AlertCircle className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-            <p className="text-yellow-500 text-sm">
-              No images found in the article. Consider adding images manually or using AI generation.
-            </p>
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+            <div className="flex flex-col items-center text-center">
+              <AlertCircle className="w-6 h-6 text-yellow-500 mb-2" />
+              <p className="text-yellow-500 text-sm mb-3">
+                No images found in the article source.
+              </p>
+              <p className="text-gray-400 text-xs mb-4">
+                You can proceed without images, or manually search for and add images related to "{title}"
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const searchQuery = encodeURIComponent(`${title} technology`);
+                  window.open(`https://www.google.com/search?q=${searchQuery}&tbm=isch`, '_blank');
+                }}
+                className="text-purple-400 border-purple-500/30 hover:bg-purple-500/10"
+              >
+                Search for Images
+              </Button>
+            </div>
           </div>
         )}
 
