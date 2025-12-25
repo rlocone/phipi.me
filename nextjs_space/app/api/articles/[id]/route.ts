@@ -5,6 +5,14 @@ import prisma from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to create slug from name
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 // GET - Get single article
 export async function GET(
   request: NextRequest,
@@ -53,7 +61,23 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { title, rawContent, aiSummary, aiFullPost, status, isStarred, publishedAt, categoryIds, tagIds } = body;
+    const { 
+      title, 
+      rawContent, 
+      aiSummary, 
+      aiFullPost, 
+      status, 
+      isStarred, 
+      publishedAt, 
+      categoryIds, 
+      tagNames,
+      images,
+      featuredImage,
+      isVideo,
+      videoId,
+      thumbnailUrl,
+      channelName
+    } = body;
 
     // If starring this article, unstar all others
     if (isStarred === true) {
@@ -72,6 +96,12 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status;
     if (isStarred !== undefined) updateData.isStarred = isStarred;
     if (publishedAt !== undefined) updateData.publishedAt = publishedAt;
+    if (images !== undefined) updateData.images = images;
+    if (featuredImage !== undefined) updateData.featuredImage = featuredImage;
+    if (isVideo !== undefined) updateData.isVideo = isVideo;
+    if (videoId !== undefined) updateData.videoId = videoId;
+    if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
+    if (channelName !== undefined) updateData.channelName = channelName;
 
     const article = await prisma.article.update({
       where: { id: params.id },
@@ -95,25 +125,47 @@ export async function PATCH(
       await prisma.articleCategory.deleteMany({
         where: { articleId: params.id },
       });
-      await prisma.articleCategory.createMany({
-        data: categoryIds.map((id: string) => ({
-          articleId: params.id,
-          categoryId: id,
-        })),
-      });
+      if (categoryIds.length > 0) {
+        await prisma.articleCategory.createMany({
+          data: categoryIds.map((id: string) => ({
+            articleId: params.id,
+            categoryId: id,
+          })),
+        });
+      }
     }
 
-    // Update tags if provided
-    if (tagIds !== undefined) {
+    // Update tags if provided (handle tag names instead of IDs)
+    if (tagNames !== undefined) {
       await prisma.articleTag.deleteMany({
         where: { articleId: params.id },
       });
-      await prisma.articleTag.createMany({
-        data: tagIds.map((id: string) => ({
-          articleId: params.id,
-          tagId: id,
-        })),
-      });
+
+      if (tagNames.length > 0) {
+        // Get or create tags
+        const tagRecords = await Promise.all(
+          tagNames.map(async (name: string) => {
+            const slug = createSlug(name);
+            const tag = await prisma.tag.upsert({
+              where: { name },
+              update: {},
+              create: { 
+                name,
+                slug
+              },
+            });
+            return tag;
+          })
+        );
+
+        // Create article-tag relationships
+        await prisma.articleTag.createMany({
+          data: tagRecords.map((tag) => ({
+            articleId: params.id,
+            tagId: tag.id,
+          })),
+        });
+      }
     }
 
     return NextResponse.json({ article });

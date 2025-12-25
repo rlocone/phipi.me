@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Star, StarOff, Trash2, Clock, ExternalLink, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Star, StarOff, Trash2, Clock, ExternalLink, Loader2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 interface Article {
   id: string;
@@ -21,6 +22,7 @@ interface Article {
 }
 
 export default function ReviewPage() {
+  const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'draft' | 'approved'>('all');
@@ -131,6 +133,9 @@ export default function ReviewPage() {
                     </a>
                   </div>
                   <div className="flex flex-col gap-2">
+                    <Button onClick={() => router.push(`/admin/edit/${article.id}`)} size="sm" className="bg-purple-600">
+                      <Edit className="w-4 h-4 mr-2" /> Edit
+                    </Button>
                     {article.status === 'DRAFT' && (
                       <Button onClick={() => handleApprove(article.id)} size="sm" className="bg-green-600">
                         <CheckCircle className="w-4 h-4 mr-2" /> Approve

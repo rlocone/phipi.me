@@ -1,0 +1,747 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import {
+  Link as LinkIcon,
+  Loader2,
+  FileText,
+  Sparkles,
+  Check,
+  AlertCircle,
+  Image as ImageIcon,
+  RefreshCw,
+  Save,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+
+type ProcessingStep = 'idle' | 'loading' | 'regenerating' | 'saving' | 'complete' | 'error';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+}
+
+interface Article {
+  id: string;
+  title: string;
+  originalUrl: string;
+  rawContent: string | null;
+  aiSummary: string | null;
+  aiFullPost: string | null;
+  status: string;
+  isStarred: boolean;
+  isVideo: boolean;
+  videoId: string | null;
+  thumbnailUrl: string | null;
+  channelName: string | null;
+  publishedAt: string | null;
+  images: string[];
+  featuredImage: string | null;
+  categories: Array<{ category: { id: string; name: string; slug: string } }>;
+  tags: Array<{ tag: { id: string; name: string } }>;
+}
+
+export default function EditArticlePage() {
+  const router = useRouter();
+  const params = useParams();
+  const articleId = params.id as string;
+
+  const [article, setArticle] = useState<Article | null>(null);
+  const [title, setTitle] = useState('');
+  const [rawContent, setRawContent] = useState('');
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiFullPost, setAiFullPost] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedTagNames, setSelectedTagNames] = useState<string[]>([]);
+  const [step, setStep] = useState<ProcessingStep>('idle');
+  const [error, setError] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  // Video-specific fields
+  const [isVideo, setIsVideo] = useState(false);
+  const [videoId, setVideoId] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [channelName, setChannelName] = useState('');
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+
+  // Image fields
+  const [images, setImages] = useState<string[]>([]);
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchArticle();
+    fetchCategories();
+    fetchTags();
+  }, [articleId]);
+
+  const fetchArticle = async () => {
+    setStep('loading');
+    try {
+      const res = await fetch(`/api/articles/${articleId}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch article');
+      }
+      const data = await res.json();
+      const art = data.article as Article;
+
+      setArticle(art);
+      setTitle(art.title);
+      setRawContent(art.rawContent || '');
+      setAiSummary(art.aiSummary || '');
+      setAiFullPost(art.aiFullPost || '');
+      setIsVideo(art.isVideo);
+      setVideoId(art.videoId || '');
+      setThumbnailUrl(art.thumbnailUrl || '');
+      setChannelName(art.channelName || '');
+      setPublishedAt(art.publishedAt);
+      setImages(art.images || []);
+      setFeaturedImage(art.featuredImage);
+      setSelectedCategoryIds(art.categories.map(c => c.category.id));
+      setSelectedTagNames(art.tags.map(t => t.tag.name));
+
+      setStep('idle');
+    } catch (error: any) {
+      console.error('Error fetching article:', error);
+      setError(error?.message || 'Failed to load article');
+      setStep('error');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      const data = await res.json();
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchTags = async () => {
+    try {
+      const res = await fetch('/api/tags');
+      const data = await res.json();
+      setTags(data.tags || []);
+    } catch (error) {
+      console.error('Failed to fetch tags:', error);
+    }
+  };
+
+  const regenerateSummary = async () => {
+    if (!rawContent && !aiFullPost) {
+      setError('No content available to generate summary');
+      return;
+    }
+
+    setError('');
+    setStep('regenerating');
+
+    try {
+      const content = aiFullPost || rawContent;
+      const res = await fetch('/api/articles/generate-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, title }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate summary');
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let summary = '';
+      let partialRead = '';
+
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+
+        partialRead += decoder.decode(value, { stream: true });
+        let lines = partialRead.split('\n');
+        partialRead = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              setAiSummary(summary.trim());
+              setStep('idle');
+              return;
+            }
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content || '';
+              summary += content;
+              setAiSummary(summary);
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      setStep('idle');
+    } catch (error: any) {
+      console.error('Error regenerating summary:', error);
+      setError(error?.message || 'Failed to regenerate summary');
+      setStep('error');
+    }
+  };
+
+  const regenerateFullPost = async () => {
+    if (!rawContent) {
+      setError('No raw content available');
+      return;
+    }
+
+    setError('');
+    setStep('regenerating');
+
+    try {
+      const res = await fetch('/api/articles/generate-full-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: rawContent, title }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate full post');
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullPost = '';
+      let partialRead = '';
+
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+
+        partialRead += decoder.decode(value, { stream: true });
+        let lines = partialRead.split('\n');
+        partialRead = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              setAiFullPost(fullPost.trim());
+              setStep('idle');
+              return;
+            }
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content || '';
+              fullPost += content;
+              setAiFullPost(fullPost);
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      setStep('idle');
+    } catch (error: any) {
+      console.error('Error regenerating full post:', error);
+      setError(error?.message || 'Failed to regenerate full post');
+      setStep('error');
+    }
+  };
+
+  const regenerateTags = async () => {
+    const content = aiFullPost || rawContent;
+    if (!content) {
+      setError('No content available to generate tags');
+      return;
+    }
+
+    setError('');
+    setStep('regenerating');
+
+    try {
+      const res = await fetch('/api/articles/generate-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, title }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate tags');
+
+      const data = await res.json();
+      setSelectedTagNames(data.tags || []);
+      setStep('idle');
+    } catch (error: any) {
+      console.error('Error generating tags:', error);
+      setError(error?.message || 'Failed to generate tags');
+      setStep('error');
+    }
+  };
+
+  const findMoreImages = async () => {
+    setError('');
+    setStep('regenerating');
+
+    try {
+      const res = await fetch('/api/articles/generate-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content: rawContent || aiFullPost, count: 5 }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // If no images found, open Google Images search
+        const searchQuery = encodeURIComponent(`${title} technology`);
+        window.open(`https://www.google.com/search?q=${searchQuery}&tbm=isch`, '_blank');
+        setError('Opened image search in new tab. Download images and add them manually.');
+        setStep('idle');
+        return;
+      }
+
+      if (data.images && data.images.length > 0) {
+        setImages([...images, ...data.images]);
+      }
+
+      setStep('idle');
+    } catch (error: any) {
+      console.error('Error finding images:', error);
+      setError(error?.message || 'Failed to find images');
+      setStep('error');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setError('Title is required');
+      return;
+    }
+
+    if (selectedCategoryIds.length === 0) {
+      setError('Please select at least one category');
+      return;
+    }
+
+    setError('');
+    setStep('saving');
+
+    try {
+      const res = await fetch(`/api/articles/${articleId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          rawContent: rawContent || null,
+          aiSummary: aiSummary || null,
+          aiFullPost: aiFullPost || null,
+          categoryIds: selectedCategoryIds,
+          tagNames: selectedTagNames,
+          images: images || [],
+          featuredImage: featuredImage || null,
+          isVideo,
+          videoId: videoId || null,
+          thumbnailUrl: thumbnailUrl || null,
+          channelName: channelName || null,
+          publishedAt: publishedAt || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update article');
+      }
+
+      setStep('complete');
+      setTimeout(() => {
+        router.push('/admin/review');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error saving article:', error);
+      setError(error?.message || 'Failed to save article');
+      setStep('error');
+    }
+  };
+
+  const handleRemoveTag = (tagName: string) => {
+    setSelectedTagNames(selectedTagNames.filter(t => t !== tagName));
+  };
+
+  const handleAddTag = (tagName: string) => {
+    if (tagName && !selectedTagNames.includes(tagName)) {
+      setSelectedTagNames([...selectedTagNames, tagName]);
+    }
+  };
+
+  if (step === 'loading') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-12 h-12 text-purple-500 animate-spin mb-4" />
+        <p className="text-gray-400">Loading article...</p>
+      </div>
+    );
+  }
+
+  if (step === 'error' && !article) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Error Loading Article</h2>
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button onClick={() => router.push('/admin/review')} variant="outline">
+            Back to Review
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-2">Edit Article</h1>
+        <p className="text-gray-400">Update article content, categories, and tags</p>
+      </div>
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 text-red-400">
+          <AlertCircle className="w-5 h-5 inline mr-2" />
+          {error}
+        </div>
+      )}
+
+      {step === 'complete' && (
+        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 text-green-400">
+          <Check className="w-5 h-5 inline mr-2" />
+          Article updated successfully! Redirecting...
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* Title */}
+        <div>
+          <Label htmlFor="title" className="text-gray-300">
+            Title
+          </Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Article title"
+            className="mt-2 bg-gray-900/50 border-purple-500/30 text-white"
+          />
+        </div>
+
+        {/* Video Preview */}
+        {isVideo && videoId && (
+          <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
+            <Label className="text-gray-300 mb-3 block">Video Preview</Label>
+            <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
+              {thumbnailUrl && (
+                <img
+                  src={thumbnailUrl}
+                  alt={title}
+                  className="w-full h-full object-cover"
+                />
+              )}
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <div className="w-16 h-16 bg-purple-600/80 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {channelName && (
+              <p className="text-sm text-gray-400 mt-2">
+                Channel: {channelName}
+              </p>
+            )}
+            {publishedAt && (
+              <p className="text-sm text-gray-400 mt-1">
+                Published: {new Date(publishedAt).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Article Images */}
+        {!isVideo && (
+          <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <Label className="text-gray-300">Images ({images.length})</Label>
+              <div className="flex gap-2">
+                {featuredImage && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFeaturedImage(null)}
+                    className="text-gray-400 hover:text-white"
+                    disabled={step === 'regenerating' || step === 'saving'}
+                  >
+                    Clear Featured
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={findMoreImages}
+                  disabled={step === 'regenerating' || step === 'saving'}
+                  className="text-purple-400 border-purple-500/30"
+                >
+                  {step === 'regenerating' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <><ImageIcon className="w-4 h-4 mr-2" /> Find More</>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {images.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {images.map((imgUrl, index) => (
+                    <div
+                      key={index}
+                      className={`relative aspect-video bg-gray-900 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                        featuredImage === imgUrl
+                          ? 'border-purple-500 ring-2 ring-purple-500/50'
+                          : 'border-gray-700 hover:border-purple-500/50'
+                      }`}
+                      onClick={() => setFeaturedImage(imgUrl)}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Article image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      {featuredImage === imgUrl && (
+                        <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                          Featured
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-400 mt-3 text-center">
+                  Click on an image to set it as the featured image
+                </p>
+              </>
+            ) : (
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 text-center">
+                <AlertCircle className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                <p className="text-yellow-500 text-sm mb-3">
+                  No images available for this article.
+                </p>
+                <p className="text-gray-400 text-xs">
+                  Click "Find More" to search for images.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Raw Content */}
+        <div>
+          <Label htmlFor="rawContent" className="text-gray-300">
+            Raw Content
+          </Label>
+          <Textarea
+            id="rawContent"
+            value={rawContent}
+            onChange={(e) => setRawContent(e.target.value)}
+            className="mt-2 bg-gray-900/50 border-purple-500/30 text-white min-h-[150px]"
+            placeholder="Original article content"
+          />
+        </div>
+
+        {/* AI Summary */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label htmlFor="aiSummary" className="text-gray-300">
+              AI Summary
+            </Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={regenerateSummary}
+              disabled={step === 'regenerating' || step === 'saving'}
+              className="text-purple-400 border-purple-500/30"
+            >
+              {step === 'regenerating' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> Regenerate</>
+              )}
+            </Button>
+          </div>
+          <Textarea
+            id="aiSummary"
+            value={aiSummary}
+            onChange={(e) => setAiSummary(e.target.value)}
+            className="mt-2 bg-gray-900/50 border-purple-500/30 text-white min-h-[100px]"
+            placeholder="AI-generated summary"
+          />
+        </div>
+
+        {/* AI Full Post */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label htmlFor="aiFullPost" className="text-gray-300">
+              AI-Enhanced Full Post
+            </Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={regenerateFullPost}
+              disabled={step === 'regenerating' || step === 'saving'}
+              className="text-purple-400 border-purple-500/30"
+            >
+              {step === 'regenerating' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> Regenerate</>
+              )}
+            </Button>
+          </div>
+          <Textarea
+            id="aiFullPost"
+            value={aiFullPost}
+            onChange={(e) => setAiFullPost(e.target.value)}
+            className="mt-2 bg-gray-900/50 border-purple-500/30 text-white min-h-[300px]"
+            placeholder="AI-generated full article"
+          />
+        </div>
+
+        {/* Categories */}
+        <div>
+          <Label className="text-gray-300">Category</Label>
+          <Select
+            value={selectedCategoryIds?.[0] || ''}
+            onValueChange={(value) => setSelectedCategoryIds([value])}
+          >
+            <SelectTrigger className="mt-2 bg-gray-900/50 border-purple-500/30 text-white">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories?.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label className="text-gray-300">Tags</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={regenerateTags}
+              disabled={step === 'regenerating' || step === 'saving'}
+              className="text-purple-400 border-purple-500/30"
+            >
+              {step === 'regenerating' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> Regenerate</>
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Selected Tags */}
+            {selectedTagNames.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedTagNames.map((tagName) => (
+                  <Badge
+                    key={tagName}
+                    className="bg-purple-600/20 text-purple-300 border border-purple-500/30 px-3 py-1.5 flex items-center gap-2"
+                  >
+                    {tagName}
+                    <button
+                      onClick={() => handleRemoveTag(tagName)}
+                      className="ml-1 hover:text-purple-100"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Add Tag Dropdown */}
+            <Select onValueChange={handleAddTag}>
+              <SelectTrigger className="bg-gray-900/50 border-purple-500/30 text-white">
+                <SelectValue placeholder="Add a tag" />
+              </SelectTrigger>
+              <SelectContent>
+                {tags
+                  .filter((tag) => !selectedTagNames.includes(tag.name))
+                  .map((tag) => (
+                    <SelectItem key={tag.id} value={tag.name}>
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button
+            onClick={handleSave}
+            disabled={step === 'regenerating' || step === 'saving'}
+            className="flex-1 bg-purple-600 hover:bg-purple-700"
+          >
+            {step === 'saving' ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={() => router.push('/admin/review')}
+            variant="outline"
+            disabled={step === 'regenerating' || step === 'saving'}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
