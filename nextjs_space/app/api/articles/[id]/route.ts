@@ -32,6 +32,11 @@ export async function GET(
             tag: true,
           },
         },
+        sources: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
       },
     });
 
@@ -62,7 +67,8 @@ export async function PATCH(
 
     const body = await request.json();
     const { 
-      title, 
+      title,
+      emoji, 
       rawContent, 
       aiSummary, 
       aiFullPost, 
@@ -90,6 +96,7 @@ export async function PATCH(
     // Update article
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
+    if (emoji !== undefined) updateData.emoji = emoji;
     if (rawContent !== undefined) updateData.rawContent = rawContent;
     if (aiSummary !== undefined) updateData.aiSummary = aiSummary;
     if (aiFullPost !== undefined) updateData.aiFullPost = aiFullPost;
@@ -115,6 +122,11 @@ export async function PATCH(
         tags: {
           include: {
             tag: true,
+          },
+        },
+        sources: {
+          orderBy: {
+            order: 'asc',
           },
         },
       },

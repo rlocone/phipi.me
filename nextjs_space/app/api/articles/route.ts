@@ -57,6 +57,11 @@ export async function GET(request: NextRequest) {
             tag: true,
           },
         },
+        sources: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
       },
       orderBy: [
         { isStarred: 'desc' },
@@ -85,6 +90,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       title, 
+      emoji,
       originalUrl, 
       rawContent, 
       aiSummary, 
@@ -98,6 +104,7 @@ export async function POST(request: NextRequest) {
       publishedAt,
       images,
       featuredImage,
+      sources,
     } = body;
 
     if (!title || !originalUrl) {
@@ -110,6 +117,7 @@ export async function POST(request: NextRequest) {
     const article = await prisma.article.create({
       data: {
         title,
+        emoji: emoji || null,
         originalUrl,
         rawContent,
         aiSummary,
@@ -136,6 +144,17 @@ export async function POST(request: NextRequest) {
               })),
             }
           : undefined,
+        sources: sources
+          ? {
+              create: sources.map((source: any, index: number) => ({
+                title: source.title,
+                url: source.url,
+                description: source.description || null,
+                approved: source.approved !== undefined ? source.approved : false,
+                order: index,
+              })),
+            }
+          : undefined,
       },
       include: {
         categories: {
@@ -148,6 +167,7 @@ export async function POST(request: NextRequest) {
             tag: true,
           },
         },
+        sources: true,
       },
     });
 

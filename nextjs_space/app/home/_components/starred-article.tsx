@@ -1,8 +1,12 @@
-import { Star, Calendar, ExternalLink } from 'lucide-react';
+import { Star, Calendar, ExternalLink, Clock } from 'lucide-react';
 import Link from 'next/link';
 import ShareButtons from './share-buttons';
+import { calculateReadingTime } from '@/lib/emoji-suggester';
 
 export default function StarredArticle({ article }: { article: any }) {
+  const content = article.aiFullPost || article.rawContent || article.aiSummary || '';
+  const readingTime = calculateReadingTime(content);
+
   return (
     <div className="bg-gradient-to-br from-purple-900/40 to-gray-800/40 backdrop-blur-sm border border-purple-500/30 rounded-xl overflow-hidden shadow-2xl">
       {article.isVideo && article.thumbnailUrl && (
@@ -51,6 +55,7 @@ export default function StarredArticle({ article }: { article: any }) {
 
         <Link href={`/article/${article.id}`}>
           <h2 className="text-3xl font-bold text-white mb-4 hover:text-purple-400 transition-colors">
+            {article.emoji && <span className="mr-3">{article.emoji}</span>}
             {article.title}
           </h2>
         </Link>
@@ -74,6 +79,10 @@ export default function StarredArticle({ article }: { article: any }) {
               {new Date(article.publishedAt).toLocaleDateString()}
             </span>
           )}
+          <span className="flex items-center text-gray-400 text-sm">
+            <Clock className="w-4 h-4 mr-1" />
+            {readingTime} min read
+          </span>
         </div>
 
         <div className="flex gap-4">

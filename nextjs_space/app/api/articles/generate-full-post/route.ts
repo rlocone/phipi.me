@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { content, title } = body;
+    const { content, title, sources } = body;
 
     if (!content) {
       return new Response(JSON.stringify({ error: 'Content is required' }), {
@@ -25,17 +25,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Build citation context if sources are provided
+    let citationContext = '';
+    if (sources && sources.length > 0) {
+      citationContext = `\n\nAdditional Reference Sources (cite these when relevant using [1], [2], etc.):\n${sources.map((s: any, i: number) => `[${i + 1}] ${s.title} - ${s.description || s.url}`).join('\n')}`;
+    }
+
     const messages = [
       {
         role: 'system',
         content:
-          'You are a skilled technical writer for a cybersecurity and privacy-focused tech publication. Transform the provided content into a well-structured, engaging article with clear sections. Maintain technical accuracy while making it accessible. Use markdown formatting.',
+          'You are a skilled technical writer for a cybersecurity and privacy-focused tech publication. Transform the provided content into a well-structured, engaging article with clear sections. Maintain technical accuracy while making it accessible. Use markdown formatting. When additional sources are provided, naturally incorporate citations as [1], [2], etc. when referencing information from those sources.',
       },
       {
         role: 'user',
         content: `Please enhance and rewrite the following article titled "${title || 'Article'}" as a comprehensive blog post for our cybersecurity and privacy audience:
 
-${content.substring(0, 8000)}
+${content.substring(0, 8000)}${citationContext}
 
 Format the article with:
 - An engaging introduction
@@ -43,6 +49,7 @@ Format the article with:
 - Key insights highlighted
 - A brief conclusion
 - Use markdown formatting
+${sources && sources.length > 0 ? '- Add citations [1], [2], etc. when referencing the additional sources above' : ''}
 
 Provide only the enhanced article content.`,
       },

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 interface Article {
   id: string;
   title: string;
+  emoji?: string;
   originalUrl: string;
   aiSummary?: string;
   status: string;
@@ -123,7 +124,10 @@ export default function ReviewPage() {
                 <div className="flex justify-between flex-1 p-6">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-white">{article.title}</h3>
+                      <h3 className="text-xl font-bold text-white">
+                        {article.emoji && <span className="mr-2">{article.emoji}</span>}
+                        {article.title}
+                      </h3>
                       {article.isStarred && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
                       <Badge className="bg-purple-600/20">{article.status}</Badge>
                     </div>

@@ -1,7 +1,11 @@
-import { Calendar, ExternalLink } from 'lucide-react';
+import { Calendar, ExternalLink, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { calculateReadingTime } from '@/lib/emoji-suggester';
 
 export default function ArticleCard({ article }: { article: any }) {
+  const content = article.aiFullPost || article.rawContent || article.aiSummary || '';
+  const readingTime = calculateReadingTime(content);
+
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm border border-purple-500/20 rounded-lg overflow-hidden hover:border-purple-500/40 transition-all hover:shadow-xl hover:shadow-purple-500/10">
       {article.isVideo && article.thumbnailUrl && (
@@ -39,6 +43,7 @@ export default function ArticleCard({ article }: { article: any }) {
       <div className="p-6">
         <Link href={`/article/${article.id}`}>
           <h3 className="text-xl font-bold text-white mb-3 hover:text-purple-400 transition-colors line-clamp-2">
+            {article.emoji && <span className="mr-2">{article.emoji}</span>}
             {article.title}
           </h3>
         </Link>
@@ -59,12 +64,18 @@ export default function ArticleCard({ article }: { article: any }) {
         </div>
 
         <div className="flex justify-between items-center">
-          {article.publishedAt && (
-            <span className="flex items-center text-gray-500 text-sm">
-              <Calendar className="w-3 h-3 mr-1" />
-              {new Date(article.publishedAt).toLocaleDateString()}
+          <div className="flex items-center gap-3 text-gray-500 text-sm">
+            {article.publishedAt && (
+              <span className="flex items-center">
+                <Calendar className="w-3 h-3 mr-1" />
+                {new Date(article.publishedAt).toLocaleDateString()}
+              </span>
+            )}
+            <span className="flex items-center">
+              <Clock className="w-3 h-3 mr-1" />
+              {readingTime} min
             </span>
-          )}
+          </div>
           <Link
             href={`/article/${article.id}`}
             className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
