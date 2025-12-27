@@ -9,12 +9,14 @@ import {
   Sparkles,
   Check,
   AlertCircle,
+  Smile,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { suggestEmoji, getEmojiSuggestions } from '@/lib/emoji-suggester';
 
 type ProcessingStep = 'idle' | 'fetching' | 'summary' | 'fullPost' | 'tags' | 'complete' | 'error';
 
@@ -42,6 +44,10 @@ export default function SubmitArticlePage() {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  
+  // Emoji fields
+  const [emoji, setEmoji] = useState('');
+  const [emojiSuggestions, setEmojiSuggestions] = useState<string[]>([]);
   
   // Video-specific fields
   const [isVideo, setIsVideo] = useState(false);
@@ -147,6 +153,9 @@ export default function SubmitArticlePage() {
       // Step 4: Generate tags
       setStep('tags');
       await generateTags(content, extractedTitle);
+
+      // Step 5: Suggest emoji based on title and category
+      suggestEmojiForArticle(extractedTitle);
 
       setStep('complete');
     } catch (error: any) {
@@ -279,6 +288,20 @@ export default function SubmitArticlePage() {
     }
   };
 
+  const suggestEmojiForArticle = (articleTitle: string) => {
+    // Get the selected category name for better emoji suggestion
+    const selectedCategory = categories.find(c => selectedCategoryIds.includes(c.id));
+    const categorySlug = selectedCategory?.slug;
+    
+    // Suggest primary emoji
+    const suggestedEmoji = suggestEmoji(articleTitle, categorySlug);
+    setEmoji(suggestedEmoji.emoji);
+    
+    // Get alternative emoji suggestions
+    const suggestions = getEmojiSuggestions(articleTitle, categorySlug);
+    setEmojiSuggestions(suggestions);
+  };
+
   const handleSubmit = async () => {
     if (!title || !url) {
       setError('Title and URL are required');
@@ -311,6 +334,7 @@ export default function SubmitArticlePage() {
           aiFullPost,
           categoryIds: selectedCategoryIds,
           tagIds,
+          emoji: emoji || undefined,
           isVideo,
           videoId: isVideo ? videoId : undefined,
           thumbnailUrl: isVideo ? thumbnailUrl : undefined,
@@ -427,6 +451,59 @@ export default function SubmitArticlePage() {
               onChange={(e) => setTitle(e.target.value)}
               className="mt-2 bg-gray-900/50 border-purple-500/30 text-white"
             />
+          </div>
+        )}
+
+        {/* Emoji Selection */}
+        {emoji && (
+          <div className="bg-gray-900/30 border border-purple-500/20 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Smile className="w-5 h-5 text-purple-400" />
+              <Label className="text-gray-300">Article Emoji</Label>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="text-4xl">{emoji}</div>
+                <div className="text-sm text-gray-400">
+                  This emoji will appear before your article title
+                </div>
+              </div>
+              {emojiSuggestions.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-400 mb-2">Or choose a different emoji:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {emojiSuggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEmoji(suggestion)}
+                        className={`text-3xl p-2 rounded-lg transition-all ${
+                          emoji === suggestion
+                            ? 'bg-purple-600/30 ring-2 ring-purple-500'
+                            : 'bg-gray-800/50 hover:bg-gray-700/50'
+                        }`}
+                        title="Click to select"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="pt-2">
+                <Label htmlFor="customEmoji" className="text-gray-400 text-xs">
+                  Or enter any emoji:
+                </Label>
+                <Input
+                  id="customEmoji"
+                  value={emoji}
+                  onChange={(e) => setEmoji(e.target.value)}
+                  className="mt-1 bg-gray-900/50 border-purple-500/20 text-white text-2xl text-center"
+                  placeholder="Enter emoji"
+                  maxLength={2}
+                />
+              </div>
+            </div>
           </div>
         )}
 
