@@ -13,6 +13,11 @@ import {
   RefreshCw,
   Save,
   Smile,
+  BookOpen,
+  Plus,
+  Trash2,
+  ExternalLink,
+  GripVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +25,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { suggestEmoji, getEmojiSuggestions } from '@/lib/emoji-suggester';
+
+interface AdditionalSource {
+  id: string;
+  title: string;
+  url: string;
+  description: string | null;
+  approved: boolean;
+  order: number;
+}
 
 type ProcessingStep = 'idle' | 'loading' | 'regenerating' | 'saving' | 'complete' | 'error';
 
@@ -88,10 +103,17 @@ export default function EditArticlePage() {
   const [images, setImages] = useState<string[]>([]);
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
 
+  // Sources fields
+  const [sources, setSources] = useState<AdditionalSource[]>([]);
+  const [isLoadingSources, setIsLoadingSources] = useState(false);
+  const [newSource, setNewSource] = useState({ title: '', url: '', description: '' });
+  const [showAddSource, setShowAddSource] = useState(false);
+
   useEffect(() => {
     fetchArticle();
     fetchCategories();
     fetchTags();
+    fetchSources();
   }, [articleId]);
 
   const fetchArticle = async () => {
