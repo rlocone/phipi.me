@@ -7,6 +7,7 @@ import { isYouTubeUrl, fetchYouTubeMetadata, cleanYouTubeUrl } from '@/lib/youtu
 import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from '@/lib/image-extractor';
 import { sanitizeUrl, isNotionUrl } from '@/lib/url-sanitizer';
 import { fetchNotionPage } from '@/lib/notion';
+import { isRecallUrl, fetchRecallPage } from '@/lib/recall';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +77,28 @@ export async function POST(request: NextRequest) {
         images: notionData.images,
         featuredImage: notionData.featuredImage,
         originalUrl: notionData.originalUrl,
+      });
+    }
+
+    // Check if it's a Recall AI URL
+    if (isRecallUrl(url)) {
+      const recallData = await fetchRecallPage(url);
+      
+      if (!recallData) {
+        return NextResponse.json(
+          { error: 'Failed to fetch Recall page content' },
+          { status: 422 }
+        );
+      }
+
+      return NextResponse.json({
+        title: recallData.title,
+        content: recallData.content,
+        excerpt: recallData.excerpt,
+        isVideo: false,
+        images: recallData.images,
+        featuredImage: recallData.featuredImage,
+        originalUrl: recallData.originalUrl,
       });
     }
 
