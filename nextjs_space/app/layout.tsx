@@ -44,6 +44,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script src="https://apps.abacus.ai/chatllm/appllm-lib.js"></script>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="phipi | Love of Tech RSS Feed"
+          href="/api/feed"
+        />
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>

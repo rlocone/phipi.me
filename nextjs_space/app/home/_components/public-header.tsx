@@ -1,5 +1,5 @@
 'use client';
-import { Shield, Home, Clock } from 'lucide-react';
+import { Shield, Home, Clock, Rss } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PublicHeader() {
@@ -17,6 +17,10 @@ export default function PublicHeader() {
           <Link href="/timeline" className="text-gray-300 hover:text-purple-400 transition-colors flex items-center gap-1">
             <Clock className="w-5 h-5" />
             <span className="text-sm hidden sm:inline">Timeline</span>
+          </Link>
+          <Link href="/feed" className="text-gray-300 hover:text-orange-400 transition-colors flex items-center gap-1">
+            <Rss className="w-5 h-5" />
+            <span className="text-sm hidden sm:inline">RSS</span>
           </Link>
         </nav>
       </div>
