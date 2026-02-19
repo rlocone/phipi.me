@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Force dynamic rendering to avoid static prerendering with DB
+export const dynamic = 'force-dynamic';
+
 // Generate RSS feed dynamically - always fresh when articles are added
 export async function GET() {
   const siteUrl = process.env.NEXTAUTH_URL || 'https://phipi.me';
