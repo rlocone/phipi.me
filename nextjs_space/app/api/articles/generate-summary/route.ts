@@ -73,7 +73,9 @@ Provide only the summary, no additional commentary.`,
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: 'Failed to generate summary' }), {
+      const errText = await response.text().catch(() => '');
+      console.error('LLM API error:', response.status, errText);
+      return new Response(JSON.stringify({ error: `AI summary generation failed (${response.status}). Please try again.` }), {
         status: response.status,
         headers: { 'Content-Type': 'application/json' },
       });

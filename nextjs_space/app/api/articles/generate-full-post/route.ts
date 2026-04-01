@@ -70,7 +70,9 @@ Provide only the enhanced article content.`,
     });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ error: 'Failed to generate full post' }), {
+      const errText = await response.text().catch(() => '');
+      console.error('LLM API error (full post):', response.status, errText);
+      return new Response(JSON.stringify({ error: `AI post generation failed (${response.status}). Please try again.` }), {
         status: response.status,
         headers: { 'Content-Type': 'application/json' },
       });

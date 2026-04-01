@@ -178,7 +178,10 @@ export default function SubmitArticlePage() {
       body: JSON.stringify({ content, title }),
     });
 
-    if (!res.ok) throw new Error('Failed to generate summary');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate summary');
+    }
 
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
@@ -220,7 +223,10 @@ export default function SubmitArticlePage() {
       body: JSON.stringify({ content, title }),
     });
 
-    if (!res.ok) throw new Error('Failed to generate full post');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate full post');
+    }
 
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
@@ -262,7 +268,10 @@ export default function SubmitArticlePage() {
       body: JSON.stringify({ content, title }),
     });
 
-    if (!res.ok) throw new Error('Failed to generate tags');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate tags');
+    }
 
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();

@@ -105,8 +105,11 @@ export async function POST(request: NextRequest) {
     // Regular article processing
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PHIPIContentHub/1.0)'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
     });
 
     if (!response.ok) {
@@ -128,20 +131,57 @@ export async function POST(request: NextRequest) {
 
     // Parse with Readability
     const dom = new JSDOM(html, { url });
-    const reader = new Readability(dom.window.document);
+    const document = dom.window.document;
+    const reader = new Readability(document.cloneNode(true) as any);
     const article = reader.parse();
 
-    if (!article) {
+    // Extract meta content as fallback for JS-rendered pages
+    const metaTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
+      || document.querySelector('title')?.textContent
+      || '';
+    const metaDescription = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+      || document.querySelector('meta[name="description"]')?.getAttribute('content')
+      || '';
+    
+    // Try to extract content from JSON-LD structured data
+    let jsonLdContent = '';
+    const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+    const ldJsonStr = document.querySelector('meta[name="application-ld+json"]')?.getAttribute('content') || '';
+    const jsonLdSources = [...Array.from(jsonLdScripts).map(s => s.textContent || ''), ldJsonStr].filter(Boolean);
+    for (const src of jsonLdSources) {
+      try {
+        const ld = JSON.parse(src);
+        if (ld.articleBody) jsonLdContent = ld.articleBody;
+        if (ld.description && !jsonLdContent) jsonLdContent = ld.description;
+      } catch { /* skip invalid JSON-LD */ }
+    }
+
+    // Determine best content: prefer Readability, fall back to meta/JSON-LD
+    let finalTitle = article?.title || metaTitle || 'Untitled';
+    let finalContent = article?.textContent || '';
+    let finalExcerpt = article?.excerpt || metaDescription || '';
+
+    // If Readability extracted too little meaningful content (< 100 chars of real text),
+    // supplement with meta descriptions and JSON-LD
+    const cleanContent = finalContent.replace(/\s+/g, ' ').trim();
+    if (cleanContent.length < 100) {
+      const supplementContent = [metaDescription, jsonLdContent].filter(Boolean).join('\n\n');
+      if (supplementContent.length > cleanContent.length) {
+        finalContent = supplementContent;
+      }
+    }
+
+    if (!finalContent && !finalExcerpt) {
       return NextResponse.json(
-        { error: 'Failed to parse article content' },
+        { error: 'Failed to parse article content. The site may require JavaScript rendering.' },
         { status: 422 }
       );
     }
 
     return NextResponse.json({
-      title: article.title || 'Untitled',
-      content: article.textContent || '',
-      excerpt: article.excerpt || '',
+      title: finalTitle,
+      content: finalContent,
+      excerpt: finalExcerpt,
       isVideo: false,
       images: validImages,
       featuredImage: validImages.length > 0 ? validImages[0] : null,
