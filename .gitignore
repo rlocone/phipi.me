@@ -18,3 +18,14 @@ out
 .deploy
 .logs
 *.tsbuildinfo
+
+# Sensitive files
+.env
+.env.*
+nextjs_space/.env
+nextjs_space/.env.*
+
+# System files
+.abacus.donotdelete
+.project_instructions.md
+*.log
