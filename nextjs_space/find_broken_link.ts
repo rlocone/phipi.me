@@ -19,7 +19,7 @@ async function findBrokenLink() {
     const matches = article.aiFullPost.match(/https?:\/\/archive\.org[^\s\)]+/g);
     if (matches) {
       console.log('Found archive.org links:');
-      matches.forEach(link => console.log(link));
+      matches.forEach((link: string) => console.log(link));
     }
   }
 }

@@ -4,6 +4,18 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import PublicHeader from '@/app/home/_components/public-header';
 
+type TimelineArticle = {
+  id: string;
+  title: string;
+  emoji: string | null;
+  createdAt: Date;
+  aiSummary: string | null;
+  rawContent: string | null;
+  thumbnailUrl: string | null;
+  featuredImage: string | null;
+  categories: { category: { name: string } }[];
+};
+
 export const metadata = {
   title: 'Timeline | phipi',
   description: 'Browse articles chronologically',
@@ -39,8 +51,8 @@ export default async function TimelinePage() {
   });
 
   // Group articles by date
-  const groupedArticles: { [key: string]: typeof articles } = {};
-  articles.forEach((article) => {
+  const groupedArticles: { [key: string]: TimelineArticle[] } = {};
+  articles.forEach((article: TimelineArticle) => {
     const dateKey = format(new Date(article.createdAt), 'MMM d, yyyy');
     if (!groupedArticles[dateKey]) {
       groupedArticles[dateKey] = [];
@@ -78,7 +90,7 @@ export default async function TimelinePage() {
 
                 {/* Articles for this date */}
                 <div className="pt-12 space-y-6">
-                  {dateArticles.map((article, index) => {
+                  {dateArticles.map((article: TimelineArticle, index: number) => {
                     const isLeft = index % 2 === 0;
                     const imageUrl = article.featuredImage || article.thumbnailUrl;
                     const category = article.categories[0]?.category?.name || 'Tech';

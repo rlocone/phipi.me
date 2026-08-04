@@ -2,8 +2,18 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+type CheckArticle = {
+  id: string;
+  title: string;
+  rawContent: string | null;
+  aiSummary: string | null;
+  aiFullPost: string | null;
+  originalUrl: string;
+  isVideo: boolean;
+};
+
 async function checkArticles() {
-  const articles = await prisma.article.findMany({
+  const articles: CheckArticle[] = await prisma.article.findMany({
     select: {
       id: true,
       title: true,
@@ -15,7 +25,7 @@ async function checkArticles() {
     },
   });
 
-  const problematicArticles = articles.filter(article => {
+  const problematicArticles = articles.filter((article: CheckArticle) => {
     const rawContent = article.rawContent || '';
     const aiSummary = article.aiSummary || '';
     const aiFullPost = article.aiFullPost || '';
@@ -32,7 +42,7 @@ async function checkArticles() {
   console.log(`Total articles: ${articles.length}`);
   console.log(`Problematic articles: ${problematicArticles.length}\n`);
 
-  problematicArticles.forEach(article => {
+  problematicArticles.forEach((article: CheckArticle) => {
     console.log(`ID: ${article.id}`);
     console.log(`Title: ${article.title}`);
     console.log(`Source: ${article.originalUrl || 'N/A'}`);

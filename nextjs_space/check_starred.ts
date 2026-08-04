@@ -2,8 +2,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+type StarredArticle = {
+  id: string;
+  title: string;
+  isStarred: boolean;
+};
+
 async function checkStarred() {
-  const starredArticles = await prisma.article.findMany({
+  const starredArticles: StarredArticle[] = await prisma.article.findMany({
     where: { isStarred: true, status: 'APPROVED' },
     select: {
       id: true,
@@ -13,7 +19,7 @@ async function checkStarred() {
   });
 
   console.log(`Starred articles (${starredArticles.length}):`);
-  starredArticles.forEach(article => {
+  starredArticles.forEach((article: StarredArticle) => {
     console.log(`- ${article.title}`);
   });
 

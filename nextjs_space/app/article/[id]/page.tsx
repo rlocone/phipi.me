@@ -8,6 +8,36 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { calculateReadingTime } from '@/lib/emoji-suggester';
 
+type ArticleWithRelations = {
+  id: string;
+  title: string;
+  emoji: string | null;
+  originalUrl: string;
+  rawContent: string | null;
+  aiSummary: string | null;
+  aiFullPost: string | null;
+  status: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  isStarred: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isVideo: boolean;
+  videoId: string | null;
+  thumbnailUrl: string | null;
+  channelName: string | null;
+  images: string[];
+  featuredImage: string | null;
+  categories: { category: { id: string; slug: string; name: string } }[];
+  tags: { tag: { id: string; slug: string; name: string } }[];
+  sources: { id: string; url: string; title?: string | null; description?: string | null }[];
+};
+
+type ArticleCategoryWithCategory = ArticleWithRelations['categories'][number];
+
+type ArticleTagWithTag = ArticleWithRelations['tags'][number];
+
+type ArticleSource = ArticleWithRelations['sources'][number];
+
 export const dynamic = 'force-dynamic';
 
 // Generate dynamic metadata for social media sharing
@@ -37,7 +67,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     || 'Read the full article on phipi | Love of Tech';
 
   // Get categories for keywords
-  const categories = article.categories?.map((c: any) => c.category.name).join(', ') || 'Technology';
+  const categories = article.categories?.map((c: ArticleWithRelations['categories'][number]) => c.category.name).join(', ') || 'Technology';
 
   const emoji = article.emoji || '';
   const title = emoji ? `${emoji} ${article.title}` : article.title;
@@ -160,13 +190,13 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
         {/* Categories and Tags */}
         <div className="flex flex-wrap gap-3 mb-8">
-          {article.categories.map(({ category }) => (
+          {article.categories.map((c: ArticleCategoryWithCategory) => (
             <Link
-              key={category.id}
-              href={`/home?category=${category.slug}`}
+              key={c.category.id}
+              href={`/home?category=${c.category.slug}`}
               className="px-4 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-full text-sm transition-colors border border-purple-500/30"
             >
-              {category.name}
+              {c.category.name}
             </Link>
           ))}
         </div>
@@ -225,7 +255,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
               Explore these related sources for more in-depth information on this topic.
             </p>
             <div className="space-y-3">
-              {article.sources.map((source, index) => (
+              {article.sources.map((source: ArticleSource, index: number) => (
                 <a
                   key={source.id}
                   href={source.url}
@@ -261,12 +291,12 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           <div className="mb-8">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Topics</h3>
             <div className="flex flex-wrap gap-2">
-              {article.tags.map(({ tag }) => (
+              {article.tags.map((t: ArticleTagWithTag) => (
                 <span
-                  key={tag.id}
+                  key={t.tag.id}
                   className="px-3 py-1 bg-gray-800 text-gray-300 rounded-md text-sm"
                 >
-                  #{tag.name}
+                  #{t.tag.name}
                 </span>
               ))}
             </div>

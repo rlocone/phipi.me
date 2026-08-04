@@ -69,7 +69,7 @@ export function sanitizeUrl(url: string): string {
     const urlObj = new URL(url);
     
     // Remove tracking parameters
-    TRACKING_PARAMS.forEach(param => {
+    TRACKING_PARAMS.forEach((param: string) => {
       urlObj.searchParams.delete(param);
     });
     
@@ -86,7 +86,7 @@ export function sanitizeUrl(url: string): string {
       }
     });
     
-    paramsToDelete.forEach(param => {
+    paramsToDelete.forEach((param: string) => {
       urlObj.searchParams.delete(param);
     });
     

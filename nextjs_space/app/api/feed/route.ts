@@ -6,10 +6,34 @@ export const dynamic = 'force-dynamic';
 
 // Generate RSS feed dynamically - always fresh when articles are added
 export async function GET() {
+  type FeedArticle = {
+    id: string;
+    title: string;
+    emoji: string | null;
+    originalUrl: string;
+    rawContent: string | null;
+    aiSummary: string | null;
+    aiFullPost: string | null;
+    status: string;
+    isStarred: boolean;
+    publishedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    isVideo: boolean;
+    videoId: string | null;
+    thumbnailUrl: string | null;
+    channelName: string | null;
+    images: string[];
+    featuredImage: string | null;
+    categories: { category: { name: string } }[];
+    tags: { tag: { name: string } }[];
+  };
+  type FeedArticleCategory = FeedArticle['categories'][number];
+  type FeedArticleTag = FeedArticle['tags'][number];
   const siteUrl = process.env.NEXTAUTH_URL || 'https://phipi.me';
   
   // Fetch approved articles
-  const articles = await prisma.article.findMany({
+  const articles: FeedArticle[] = await prisma.article.findMany({
     where: { status: 'APPROVED' },
     include: {
       categories: { include: { category: true } },
@@ -20,10 +44,10 @@ export async function GET() {
   });
 
   // Build RSS XML with media namespace for rich content
-  const rssItems = articles.map((article) => {
+  const rssItems = articles.map((article: FeedArticle) => {
     const pubDate = article.publishedAt || article.createdAt;
-    const categories = article.categories.map((ac) => ac.category.name);
-    const tags = article.tags.map((at) => at.tag.name);
+    const categories = article.categories.map((ac: FeedArticleCategory) => ac.category.name);
+    const tags = article.tags.map((at: FeedArticleTag) => at.tag.name);
     const allCategories = [...new Set([...categories, ...tags])];
     
     // Get the best image

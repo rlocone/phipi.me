@@ -135,7 +135,7 @@ export async function fetchRecallPage(url: string): Promise<RecallPageResult | n
       const paragraphs = contentArea.querySelectorAll('p, li, h2, h3, h4');
       let content = '';
       
-      paragraphs.forEach(p => {
+      paragraphs.forEach((p: Element) => {
         const text = (p as HTMLElement).innerText?.trim();
         if (text && text.length > 15 && !text.includes('Chat with') && !text.includes('Sign in')) {
           content += text + '\n\n';
@@ -145,7 +145,7 @@ export async function fetchRecallPage(url: string): Promise<RecallPageResult | n
       // Get images from the page
       const images: string[] = [];
       const imgElements = document.querySelectorAll('img[src]');
-      imgElements.forEach(img => {
+      imgElements.forEach((img: Element) => {
         const src = img.getAttribute('src');
         if (src && src.startsWith('http') && !src.includes('icon') && !src.includes('logo')) {
           images.push(src);

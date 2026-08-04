@@ -146,7 +146,7 @@ IMPORTANT: Return ONLY the JSON array, no markdown, no code blocks, no other tex
       
       // Validate and clean sources
       sources = sources
-        .filter(s => s.title && s.url && s.description)
+        .filter((s: Source) => s.title && s.url && s.description)
         .slice(0, 5)
         .map((s, index) => ({
           title: s.title.trim(),

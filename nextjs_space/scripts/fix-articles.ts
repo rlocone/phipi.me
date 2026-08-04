@@ -21,7 +21,7 @@ async function fixArticles() {
     },
   });
 
-  const problematicArticles = articles.filter(article => {
+  const problematicArticles = articles.filter((article: typeof articles[number]) => {
     const rawContent = article.rawContent || '';
     const aiSummary = article.aiSummary || '';
     const aiFullPost = article.aiFullPost || '';

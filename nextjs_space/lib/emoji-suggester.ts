@@ -173,7 +173,7 @@ export function getEmojiSuggestions(title: string, categorySlug?: string): strin
   
   // Add category-based suggestions
   if (categorySlug && categoryEmojis[categorySlug]) {
-    categoryEmojis[categorySlug].forEach(emoji => suggestions.add(emoji));
+    categoryEmojis[categorySlug].forEach((emoji: string) => suggestions.add(emoji));
   }
   
   // Add some defaults if we have less than 5
