@@ -1,12 +1,10 @@
-FROM node:lts-alpine
-ENV NODE_ENV=production
-WORKDIR /usr/src/app
-COPY ["package.json", "package-lock.json", "./"]
-RUN npm install --legacy-peer-deps
+FROM node:20-slim
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev --legacy-peer-deps
 COPY . .
-RUN node -e "console.log(require.resolve('tailwindcss'))"
-RUN npm run build
+RUN DATABASE_URL=postgresql://dummy:dummy@127.0.0.1:5432/dummy npx prisma generate
+RUN DATABASE_URL=postgresql://dummy:dummy@127.0.0.1:5432/dummy npm run build
 EXPOSE 3000
-RUN chown -R node /usr/src/app
-USER node
 CMD ["npm", "start"]
