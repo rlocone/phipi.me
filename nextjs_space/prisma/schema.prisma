@@ -1,6 +1,6 @@
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -152,6 +152,23 @@ model RSSFeed {
   autoFetchEnabled Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model ArticleProcessingLog {
+  id           String    @id @default(cuid())
+  url          String
+  title        String?
+  status       String    @default("processing")
+  stage        String?
+  errorMessage String?   @db.Text
+  details      Json?
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([url, createdAt])
+  @@index([status, createdAt])
 }
 
 enum ArticleStatus {

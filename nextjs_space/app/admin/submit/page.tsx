@@ -33,6 +33,14 @@ interface Tag {
   name: string;
 }
 
+interface BatchSubmission {
+  url: string;
+  title?: string;
+  status: 'queued' | 'processing' | 'saved' | 'error';
+  error?: string;
+  processingLogId?: string;
+}
+
 export default function SubmitArticlePage() {
   const router = useRouter();
   const [url, setUrl] = useState('');
@@ -46,6 +54,9 @@ export default function SubmitArticlePage() {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [batchUrls, setBatchUrls] = useState('');
+  const [batchSubmissions, setBatchSubmissions] = useState<BatchSubmission[]>([]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
   
   // Emoji fields
   const [emoji, setEmoji] = useState('');
@@ -89,6 +100,181 @@ export default function SubmitArticlePage() {
     } catch (error) {
       console.error('Failed to fetch tags:', error);
     }
+  };
+
+  const extractUrls = (input: string) =>
+    Array.from(
+      new Set(
+        (input.match(/https?:\/\/[^\s<>"')\]]+/gi) || [])
+          .map((value) => value.replace(/[),.;]+$/g, '').trim())
+          .filter(Boolean)
+      )
+    );
+
+  const oneLineError = (value: unknown) =>
+    String(value || 'Failed to process article').replace(/\s+/g, ' ').trim().slice(0, 240);
+
+  const createProcessingLog = async (queueUrl: string) => {
+    try {
+      const res = await fetch('/api/article-processing-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: queueUrl, status: 'processing', stage: 'queued' }),
+      });
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      return data.log?.id as string | undefined;
+    } catch (logError) {
+      console.error('Failed to create article processing log:', logError);
+      return undefined;
+    }
+  };
+
+  const updateProcessingLog = async (
+    id: string | undefined,
+    update: { title?: string; status?: string; stage?: string; errorMessage?: string; details?: unknown }
+  ) => {
+    if (!id) return;
+    try {
+      await fetch('/api/article-processing-logs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...update }),
+      });
+    } catch (logError) {
+      console.error('Failed to update article processing log:', logError);
+    }
+  };
+
+  const streamSseText = async (
+    res: Response,
+    onUpdate?: (text: string) => void
+  ): Promise<string> => {
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    let partialRead = '';
+
+    while (true) {
+      const { done, value } = await reader!.read();
+      if (done) break;
+
+      partialRead += decoder.decode(value, { stream: true });
+      let lines = partialRead.split('\n');
+      partialRead = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          return text.trim();
+        }
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content || '';
+          text += content;
+          if (onUpdate) onUpdate(text);
+        } catch {
+          // Skip invalid JSON
+        }
+      }
+    }
+
+    return text.trim();
+  };
+
+  const streamTagNames = async (res: Response): Promise<string[]> => {
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let partialRead = '';
+
+    while (true) {
+      const { done, value } = await reader!.read();
+      if (done) break;
+
+      partialRead += decoder.decode(value, { stream: true });
+      let lines = partialRead.split('\n');
+      partialRead = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          return [];
+        }
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.status === 'completed' && parsed.result?.tags) {
+            return parsed.result.tags;
+          }
+        } catch {
+          // Skip invalid JSON
+        }
+      }
+    }
+
+    return [];
+  };
+
+  const processArticleUrl = async (articleUrl: string) => {
+    const fetchRes = await fetch('/api/articles/process-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: articleUrl }),
+    });
+
+    if (!fetchRes.ok) {
+      const data = await fetchRes.json();
+      throw new Error(data.error || 'Failed to fetch article');
+    }
+
+    const responseData = await fetchRes.json();
+    return responseData;
+  };
+
+  const generateSummaryText = async (content: string, articleTitle: string) => {
+    const res = await fetch('/api/articles/generate-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, title: articleTitle }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate summary');
+    }
+
+    return streamSseText(res);
+  };
+
+  const generateFullPostText = async (content: string, articleTitle: string) => {
+    const res = await fetch('/api/articles/generate-full-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, title: articleTitle }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate full post');
+    }
+
+    return streamSseText(res);
+  };
+
+  const generateTagsText = async (content: string, articleTitle: string) => {
+    const res = await fetch('/api/articles/generate-tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, title: articleTitle }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate tags');
+    }
+
+    return streamTagNames(res);
   };
 
   const processUrl = async () => {
@@ -365,6 +551,140 @@ export default function SubmitArticlePage() {
     }
   };
 
+  const handleBatchSubmit = async () => {
+    const urls = extractUrls(batchUrls);
+
+    if (urls.length === 0) {
+      setError('Paste one or more article URLs to queue');
+      return;
+    }
+
+    setError('');
+    setBatchProcessing(true);
+    setBatchSubmissions(urls.map((queueUrl) => ({ url: queueUrl, status: 'queued' })));
+
+    try {
+      for (let index = 0; index < urls.length; index += 1) {
+        const queueUrl = urls[index];
+        setBatchSubmissions((current) =>
+          current.map((item, itemIndex) =>
+            itemIndex === index
+              ? { ...item, status: 'processing', error: undefined }
+              : item
+          )
+        );
+
+        let processingLogId: string | undefined;
+        let processingStage = 'queued';
+        try {
+          processingLogId = await createProcessingLog(queueUrl);
+          setBatchSubmissions((current) =>
+            current.map((item, itemIndex) =>
+              itemIndex === index ? { ...item, processingLogId } : item
+            )
+          );
+
+          processingStage = 'fetch';
+          await updateProcessingLog(processingLogId, { stage: processingStage });
+          const extracted = await processArticleUrl(queueUrl);
+          const articleTitle = extracted.title || 'Untitled';
+          const content = extracted.content || '';
+          await updateProcessingLog(processingLogId, { title: articleTitle, stage: 'summary' });
+
+          const summary = await generateSummaryText(content, articleTitle);
+          processingStage = 'full-post';
+          await updateProcessingLog(processingLogId, { stage: processingStage });
+          const fullPost = await generateFullPostText(content, articleTitle);
+          processingStage = 'tags';
+          await updateProcessingLog(processingLogId, { stage: processingStage });
+          const batchTags = await generateTagsText(content, articleTitle);
+
+          const tagIds: string[] = [];
+          for (const tagName of batchTags) {
+            const res = await fetch('/api/tags', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: tagName }),
+            });
+            const data = await res.json();
+            if (data.tag?.id) {
+              tagIds.push(data.tag.id);
+            }
+          }
+
+          const createRes = await fetch('/api/articles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: articleTitle,
+              originalUrl: extracted.originalUrl || queueUrl,
+              rawContent: content,
+              aiSummary: summary,
+              aiFullPost: fullPost,
+              categoryIds: selectedCategoryIds,
+              tagIds,
+              emoji: suggestEmoji(articleTitle, categories.find((cat) => selectedCategoryIds.includes(cat.id))?.slug).emoji,
+              isVideo: extracted.isVideo,
+              videoId: extracted.isVideo ? extracted.videoId : undefined,
+              thumbnailUrl: extracted.isVideo ? extracted.thumbnailUrl : undefined,
+              channelName: extracted.isVideo ? extracted.channelName : undefined,
+              publishedAt: extracted.publishedAt || undefined,
+              images: !extracted.isVideo ? extracted.images : undefined,
+              featuredImage: !extracted.isVideo ? extracted.featuredImage : undefined,
+            }),
+          });
+
+          if (!createRes.ok) {
+            const data = await createRes.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to create article');
+          }
+
+          await updateProcessingLog(processingLogId, {
+            title: articleTitle,
+            status: 'saved',
+            stage: 'saved',
+          });
+          setBatchSubmissions((current) =>
+            current.map((item, itemIndex) =>
+              itemIndex === index
+                ? { ...item, title: articleTitle, status: 'saved' }
+                : item
+            )
+          );
+        } catch (batchError: any) {
+          const errorMessage = oneLineError(batchError?.message);
+          await updateProcessingLog(processingLogId, {
+            status: 'error',
+            stage: processingStage,
+            errorMessage,
+          });
+          setBatchSubmissions((current) =>
+            current.map((item, itemIndex) =>
+              itemIndex === index
+                ? {
+                    ...item,
+                    status: 'error',
+                    error: errorMessage,
+                  }
+                : item
+            )
+          );
+        }
+      }
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleBatchFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    setBatchUrls(text);
+    event.target.value = '';
+  };
+
   const handleSubmit = async () => {
     if (!title || !url) {
       setError('Title and URL are required');
@@ -405,6 +725,7 @@ export default function SubmitArticlePage() {
           publishedAt: publishedAt || undefined,
           images: !isVideo ? images : undefined,
           featuredImage: !isVideo ? featuredImage : undefined,
+          sources: additionalSources.length > 0 ? additionalSources : undefined,
         }),
       });
 
@@ -425,6 +746,101 @@ export default function SubmitArticlePage() {
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Submit Article</h1>
         <p className="text-gray-400">Add a new article from URL with AI-powered content generation</p>
+      </div>
+
+      {/* Batch Queue */}
+      <div className="bg-gray-800/50 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 space-y-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Batch Queue</h2>
+            <p className="text-sm text-gray-400">
+              Paste one or more article URLs and process them sequentially through the same submit flow.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={handleBatchSubmit}
+            disabled={batchProcessing}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {batchProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Queuing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Queue URLs
+              </>
+            )}
+          </Button>
+        </div>
+        <Textarea
+          value={batchUrls}
+          onChange={(e) => setBatchUrls(e.target.value)}
+          className="min-h-[140px] bg-gray-900/50 border-purple-500/30 text-white"
+          placeholder="Paste one URL per line, or a markdown list of story links."
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex cursor-pointer items-center rounded-md border border-purple-500/30 bg-purple-600/10 px-3 py-2 text-sm text-purple-300 hover:bg-purple-600/20">
+            Load markdown file
+            <input
+              type="file"
+              accept=".md,.markdown,.txt"
+              className="hidden"
+              onChange={handleBatchFileUpload}
+            />
+          </label>
+          <p className="text-xs text-gray-500">A .md or .txt file with URLs will be parsed into the queue box.</p>
+        </div>
+        {batchSubmissions.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-400">
+              <span>{batchSubmissions.length} queued</span>
+              <span>
+                {batchSubmissions.filter((item) => item.status === 'saved').length} saved ·{' '}
+                {batchSubmissions.filter((item) => item.status === 'error').length} errors
+              </span>
+            </div>
+            <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+              {batchSubmissions.map((item, index) => (
+                <div
+                  key={`${item.url}-${index}`}
+                  className="rounded-lg border border-purple-500/10 bg-gray-900/40 p-3 text-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-white">{item.title || item.url}</p>
+                      <p className="truncate text-xs text-gray-400">{item.url}</p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${
+                        item.status === 'saved'
+                          ? 'bg-green-600/20 text-green-300'
+                          : item.status === 'error'
+                          ? 'bg-red-600/20 text-red-300'
+                          : item.status === 'processing'
+                          ? 'bg-purple-600/20 text-purple-300'
+                          : 'bg-gray-700 text-gray-300'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                  {item.error && (
+                    <p
+                      className="mt-2 truncate whitespace-nowrap text-xs text-red-300"
+                      title={item.error}
+                    >
+                      {item.error}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress Bar */}
