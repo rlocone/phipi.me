@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { openRouterChatCompletions } from '@/lib/openrouter';
 
 export const dynamic = 'force-dynamic';
 
-// POST - Generate AI-enhanced full post (streaming)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Build citation context if sources are provided
     let citationContext = '';
     if (sources && sources.length > 0) {
       citationContext = `\n\nAdditional Reference Sources (cite these when relevant using [1], [2], etc.):\n${sources.map((s: any, i: number) => `[${i + 1}] ${s.title} - ${s.description || s.url}`).join('\n')}`;
@@ -39,34 +38,14 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Please enhance and rewrite the following article titled "${title || 'Article'}" as a comprehensive blog post for our cybersecurity and privacy audience:
-
-${content.substring(0, 8000)}${citationContext}
-
-Format the article with:
-- An engaging introduction
-- Clear section headings
-- Key insights highlighted
-- A brief conclusion
-- Use markdown formatting
-${sources && sources.length > 0 ? '- Add citations [1], [2], etc. when referencing the additional sources above' : ''}
-
-Provide only the enhanced article content.`,
+        content: `Please enhance and rewrite the following article titled "${title || 'Article'}" as a comprehensive blog post for our cybersecurity and privacy audience:\n\n${content.substring(0, 8000)}${citationContext}\n\nFormat the article with:\n- An engaging introduction\n- Clear section headings\n- Key insights highlighted\n- A brief conclusion\n- Use markdown formatting\n${sources && sources.length > 0 ? '- Add citations [1], [2], etc. when referencing the additional sources above' : ''}\n\nProvide only the enhanced article content.`,
       },
     ];
 
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: messages,
-        stream: true,
-        max_tokens: 2000,
-      }),
+    const response = await openRouterChatCompletions({
+      messages,
+      stream: true,
+      max_tokens: 2000,
     });
 
     if (!response.ok) {

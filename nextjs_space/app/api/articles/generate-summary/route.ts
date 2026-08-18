@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { openRouterChatCompletions } from '@/lib/openrouter';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if content is too short or is placeholder text
     const trimmedContent = content.trim();
     if (trimmedContent.length < 50) {
       return new Response(JSON.stringify({ error: 'Content is too short to generate a meaningful summary. Please provide more content or use the AI generation tools.' }), {
@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if content contains Notion page instructions
     if (trimmedContent.includes('This is a Notion page') || trimmedContent.includes('manual content entry required')) {
       return new Response(JSON.stringify({ error: 'Please provide actual content instead of placeholder text. Use the "Generate Full Post" feature or manually enter content from the Notion page.' }), {
         status: 400,
@@ -50,26 +49,14 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":
-
-${trimmedContent.substring(0, 4000)}
-
-Provide only the summary, no additional commentary.`,
+        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":\n\n${trimmedContent.substring(0, 4000)}\n\nProvide only the summary, no additional commentary.`,
       },
     ];
 
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: messages,
-        stream: true,
-        max_tokens: 300,
-      }),
+    const response = await openRouterChatCompletions({
+      messages,
+      stream: true,
+      max_tokens: 300,
     });
 
     if (!response.ok) {

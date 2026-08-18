@@ -2,10 +2,10 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { openRouterChatCompletions } from '@/lib/openrouter';
 
 export const dynamic = 'force-dynamic';
 
-// POST - Auto-generate tags based on content (streaming with JSON response)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get existing tags for context
     const existingTags = await prisma.tag.findMany({
       select: { name: true },
     });
@@ -41,34 +40,15 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Analyze this article titled "${title || 'Article'}" and suggest 3-6 relevant tags:
-
-${content.substring(0, 3000)}
-
-Existing tags in our system: ${tagList || 'None yet'}
-
-Respond in JSON format with the following structure:
-{
-  "tags": ["tag1", "tag2", "tag3"]
-}
-
-Respond with raw JSON only. Do not include code blocks, markdown, or any other formatting. Each tag should be lowercase, 1-3 words.`,
+        content: `Analyze this article titled "${title || 'Article'}" and suggest 3-6 relevant tags:\n\n${content.substring(0, 3000)}\n\nExisting tags in our system: ${tagList || 'None yet'}\n\nRespond in JSON format with the following structure:\n{\n  "tags": ["tag1", "tag2", "tag3"]\n}\n\nRespond with raw JSON only. Do not include code blocks, markdown, or any other formatting. Each tag should be lowercase, 1-3 words.`,
       },
     ];
 
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: messages,
-        stream: true,
-        max_tokens: 200,
-        response_format: { type: 'json_object' },
-      }),
+    const response = await openRouterChatCompletions({
+      messages,
+      stream: true,
+      max_tokens: 200,
+      response_format: { type: 'json_object' },
     });
 
     if (!response.ok) {
@@ -125,7 +105,6 @@ Respond with raw JSON only. Do not include code blocks, markdown, or any other f
                   });
                   controller.enqueue(encoder.encode(`data: ${progressData}\n\n`));
                 } catch (e) {
-                  // Skip invalid JSON
                 }
               }
             }
