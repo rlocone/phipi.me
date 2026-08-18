@@ -52,7 +52,7 @@ export default async function HomePage() {
         tags: { include: { tag: true } },
       },
       orderBy: { publishedAt: 'desc' },
-      take: 12,
+      take: 24,
     }),
     prisma.category.findMany({ orderBy: { name: 'asc' } }),
   ]);
