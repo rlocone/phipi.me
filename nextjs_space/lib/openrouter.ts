@@ -56,6 +56,7 @@ export async function openRouterChatCompletions(options: OpenRouterChatOptions) 
       const data = await clone.json();
       const usage = data?.usage || {};
       await recordLlmUsage({
+        provider: 'openrouter',
         model,
         purpose,
         promptTokens: usage.prompt_tokens,
@@ -65,6 +66,7 @@ export async function openRouterChatCompletions(options: OpenRouterChatOptions) 
       });
     } catch {
       await recordLlmUsage({
+        provider: 'openrouter',
         model,
         purpose,
         promptTokens: estimatePromptTokens(options.messages),
@@ -75,6 +77,7 @@ export async function openRouterChatCompletions(options: OpenRouterChatOptions) 
     }
   } else if (purpose) {
     await recordLlmUsage({
+      provider: 'openrouter',
       model,
       purpose,
       promptTokens: estimatePromptTokens(options.messages),

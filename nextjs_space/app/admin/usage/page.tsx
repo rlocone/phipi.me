@@ -12,7 +12,7 @@ export default async function LlmUsagePage() {
       take: 50,
     }),
     prisma.llmUsage.groupBy({
-      by: ['purpose', 'model'],
+      by: ['provider', 'model', 'purpose'],
       where: { createdAt: { gte: since } },
       _sum: { totalTokens: true, promptTokens: true, completionTokens: true, cost: true },
       _count: true,
@@ -30,10 +30,10 @@ export default async function LlmUsagePage() {
       <pre className="whitespace-pre-wrap rounded-lg border border-purple-500/20 bg-gray-900/40 p-4 text-sm text-purple-100">{rollup.text}</pre>
       <div className="grid gap-3 sm:grid-cols-2">
         {grouped.map((row) => (
-          <div key={`${row.purpose}-${row.model}`} className="rounded-lg border border-purple-500/20 bg-gray-900/40 p-4">
+          <div key={`${row.provider}-${row.model}-${row.purpose}`} className="rounded-lg border border-purple-500/20 bg-gray-900/40 p-4">
             <div className="text-sm text-purple-300">{row.purpose}</div>
             <div className="text-xl font-semibold">{(row._sum.totalTokens || 0).toLocaleString()} tokens</div>
-            <div className="text-xs text-gray-400">{row._count} calls · {row.model}</div>
+            <div className="text-xs text-gray-400">{row._count} calls · {row.provider} / {row.model}</div>
           </div>
         ))}
         {grouped.length === 0 && <p className="text-gray-400">No LLM calls yet.</p>}
@@ -42,8 +42,9 @@ export default async function LlmUsagePage() {
         <thead className="text-left text-gray-400">
           <tr>
             <th className="py-2">When</th>
-            <th>Purpose</th>
+            <th>Provider</th>
             <th>Model</th>
+            <th>Purpose</th>
             <th>Tokens</th>
           </tr>
         </thead>
@@ -51,8 +52,9 @@ export default async function LlmUsagePage() {
           {rows.map((row) => (
             <tr key={row.id} className="border-t border-white/10">
               <td className="py-2 text-gray-400">{row.createdAt.toLocaleString('en-US', { timeZone: 'America/New_York' })}</td>
-              <td>{row.purpose}{row.estimated ? ' *' : ''}</td>
+              <td>{row.provider}</td>
               <td className="text-gray-400">{row.model}</td>
+              <td>{row.purpose}{row.estimated ? ' *' : ''}</td>
               <td>{row.totalTokens}</td>
             </tr>
           ))}

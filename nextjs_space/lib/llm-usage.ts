@@ -113,21 +113,29 @@ export async function buildLlmRollup(options?: { ymd?: string }) {
     { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, cost: 0, estimated: 0, failed: 0 }
   );
 
-  const byPurpose = new Map<string, { calls: number; tokens: number }>();
+  const bySlice = new Map<string, { provider: string; model: string; purpose: string; calls: number; tokens: number }>();
   const models = new Set<string>();
   const providers = new Set<string>();
   for (const row of dayRows) {
-    const cur = byPurpose.get(row.purpose) || { calls: 0, tokens: 0 };
+    const key = `${row.provider}\0${row.model}\0${row.purpose}`;
+    const cur = bySlice.get(key) || {
+      provider: row.provider,
+      model: row.model,
+      purpose: row.purpose,
+      calls: 0,
+      tokens: 0,
+    };
     cur.calls += 1;
     cur.tokens += row.totalTokens;
-    byPurpose.set(row.purpose, cur);
+    bySlice.set(key, cur);
     models.add(row.model);
     providers.add(row.provider);
   }
 
-  const purposeBits = [...byPurpose.entries()]
-    .sort((a, b) => b[1].tokens - a[1].tokens)
-    .map(([purpose, v]) => `${purpose} ${v.calls} · ${v.tokens.toLocaleString()}`);
+  const slices = [...bySlice.values()].sort((a, b) => b.tokens - a.tokens);
+  const sliceBits = slices.map(
+    (v) => `${v.provider} / ${v.model} · ${v.purpose} ${v.calls} · ${v.tokens.toLocaleString()}`
+  );
 
   const warnLimit = dailyTokenWarnLimit();
   const warn = totals.totalTokens >= warnLimit;
@@ -143,13 +151,14 @@ export async function buildLlmRollup(options?: { ymd?: string }) {
       ? `phipi.me LLM (${ymd} ET): none`
       : `phipi.me LLM (${ymd} ET): ${totals.calls} calls · ${totals.totalTokens.toLocaleString()} tokens · ${provider} / ${model}${costBit}${estBit}${failBit}${warnBit}`;
 
-  const text = purposeBits.length ? `${line}\n  ${purposeBits.join(' | ')}` : line;
+  const text = sliceBits.length ? `${line}\n  ${sliceBits.join('\n  ')}` : line;
 
   return {
     ymd,
     timezone: ET,
     totals,
-    byPurpose: Object.fromEntries(byPurpose),
+    byPurpose: Object.fromEntries(slices.map((s) => [`${s.provider}/${s.model}/${s.purpose}`, s])),
+    bySlice: slices,
     models: [...models],
     providers: [...providers],
     warn,
