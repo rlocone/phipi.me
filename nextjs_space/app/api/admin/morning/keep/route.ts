@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
 import prisma from '@/lib/db';
 import { openRouterChatCompletions } from '@/lib/openrouter';
 import { SITE_CATEGORIES, type SiteCategory } from '@/lib/morning-queue';
 import { extractYouTubeVideoId } from '@/lib/youtube';
 import { DEFAULT_ARTICLE_AUTHOR } from '@/lib/article-author';
+import { assertPublicHttpUrl } from '@/lib/safe-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,10 +43,8 @@ async function generateSummary(title: string, excerpt: string): Promise<string> 
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
   try {
     const body = await request.json();
@@ -62,8 +62,9 @@ export async function POST(request: NextRequest) {
       ? { title: String(body.extraReading.title), url: String(body.extraReading.url) }
       : null;
 
-    if (!title || !originalUrl) {
-      return NextResponse.json({ error: 'Title and URL are required' }, { status: 400 });
+    const publicUrl = assertPublicHttpUrl(originalUrl);
+    if (!title || !publicUrl) {
+      return NextResponse.json({ error: 'Title and a public http(s) URL are required' }, { status: 400 });
     }
 
     if (!SITE_CATEGORIES.includes(categoryName)) {
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     const summary = await generateSummary(title, excerpt);
 
     const existing = await prisma.article.findUnique({
-      where: { originalUrl },
+      where: { originalUrl: publicUrl },
       include: {
         categories: { include: { category: true } },
         sources: true,
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         author: DEFAULT_ARTICLE_AUTHOR,
-        originalUrl,
+        originalUrl: publicUrl,
         rawContent: excerpt || null,
         aiSummary: summary,
         status: 'DRAFT',

@@ -3,12 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { articleAuthor } from '@/lib/article-author';
+import { getOptionalSession, requireAdmin } from '@/lib/require-admin';
 
 export const dynamic = 'force-dynamic';
 
 // GET - List all articles with filters
 export async function GET(request: NextRequest) {
   try {
+    const session = await getOptionalSession();
     const searchParams = request.nextUrl?.searchParams;
     const status = searchParams?.get('status');
     const category = searchParams?.get('category');
@@ -18,7 +20,11 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
 
-    if (status) where.status = status;
+    if (!session) {
+      where.status = 'APPROVED';
+    } else if (status) {
+      where.status = status;
+    }
     if (starred === 'true') where.isStarred = true;
     if (search) {
       where.OR = [
@@ -83,10 +89,8 @@ export async function GET(request: NextRequest) {
 // POST - Create new article
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { 

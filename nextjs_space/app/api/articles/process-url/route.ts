@@ -7,6 +7,8 @@ import puppeteer from 'puppeteer-core';
 import { isYouTubeUrl, fetchYouTubeMetadata, cleanYouTubeUrl } from '@/lib/youtube';
 import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from '@/lib/image-extractor';
 import { sanitizeUrl, isNotionUrl } from '@/lib/url-sanitizer';
+import { assertPublicHttpUrl } from '@/lib/safe-url';
+import { requireAdmin } from '@/lib/require-admin';
 import { fetchNotionPage } from '@/lib/notion';
 import { isRecallUrl, fetchRecallPage } from '@/lib/recall';
 
@@ -145,10 +147,8 @@ export const dynamic = 'force-dynamic';
 // POST - Extract content from URL
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     let { url } = body;
@@ -162,6 +162,11 @@ export async function POST(request: NextRequest) {
 
     // Sanitize URL to remove tracking parameters
     url = sanitizeUrl(url);
+    const publicUrl = assertPublicHttpUrl(url);
+    if (!publicUrl) {
+      return NextResponse.json({ error: 'URL must be a public http(s) address' }, { status: 400 });
+    }
+    url = publicUrl;
 
     // Check if it's a YouTube URL
     if (isYouTubeUrl(url)) {
