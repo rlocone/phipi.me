@@ -75,10 +75,12 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allow relative paths
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      // Allow same origin
-      if (new URL(url).origin === baseUrl) return url;
+      if (url.startsWith('/') && !url.startsWith('//')) return `${baseUrl}${url}`;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {
+        return baseUrl;
+      }
       return baseUrl;
     },
   },

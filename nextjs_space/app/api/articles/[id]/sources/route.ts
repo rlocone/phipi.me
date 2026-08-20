@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin, getOptionalSession } from '@/lib/require-admin';
 import prisma from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -20,8 +21,23 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const article = await prisma.article.findUnique({
+      where: { id: params.id },
+      select: { status: true },
+    });
+    if (!article) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    }
+    if (article.status !== 'APPROVED') {
+      const auth = await requireAdmin();
+      if (auth.error) return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    }
+    const session = await getOptionalSession();
     const sources = await prisma.additionalSource.findMany({
-      where: { articleId: params.id },
+      where: {
+        articleId: params.id,
+        ...(session ? {} : { approved: true }),
+      },
       orderBy: { order: 'asc' },
     });
 
@@ -41,10 +57,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { source, sources: bulkSources } = body;
@@ -135,10 +149,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { sourceId, title, url, description, approved, order } = body;
@@ -178,10 +190,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const { searchParams } = new URL(request.url);
     const sourceId = searchParams.get('sourceId');

@@ -231,9 +231,18 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 h2: ({ node, ...props }) => <h2 className="text-2xl font-bold mb-3 mt-6 text-white" {...props} />,
                 h3: ({ node, ...props }) => <h3 className="text-xl font-bold mb-2 mt-4 text-white" {...props} />,
                 p: ({ node, ...props }) => <p className="mb-4 text-gray-300 leading-relaxed" {...props} />,
-                a: ({ node, ...props }) => (
-                  <a className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer" {...props} />
-                ),
+                a: ({ node, href, ...props }) => {
+                  const safe = typeof href === 'string' && /^https?:\/\//i.test(href) ? href : undefined;
+                  return (
+                    <a
+                      className="text-purple-400 hover:text-purple-300 underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                      href={safe}
+                    />
+                  );
+                },
                 ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 text-gray-300 space-y-2" {...props} />,
                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 text-gray-300 space-y-2" {...props} />,
                 code: ({ node, ...props }) => <code className="bg-gray-800 px-2 py-1 rounded text-purple-300 text-sm" {...props} />,

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { requireAdmin } from '@/lib/require-admin';
+import { assertPublicHttpUrl } from '@/lib/safe-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +36,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, feedUrl, autoFetchEnabled } = body;
 
-    if (!name || !feedUrl) {
+    const publicUrl = assertPublicHttpUrl(String(feedUrl || ''));
+    if (!name || !publicUrl) {
       return NextResponse.json(
-        { error: 'Name and feed URL are required' },
+        { error: 'Name and a public http(s) feed URL are required' },
         { status: 400 }
       );
     }
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
     const feed = await prisma.rSSFeed.create({
       data: {
         name,
-        feedUrl,
+        feedUrl: publicUrl,
         autoFetchEnabled: autoFetchEnabled ?? true,
       },
     });

@@ -45,9 +45,11 @@ export async function GET(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
 
-    const session = await getOptionalSession();
-    if (!session && article.status !== 'APPROVED') {
-      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    if (article.status !== 'APPROVED') {
+      const auth = await requireAdmin();
+      if (auth.error) {
+        return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+      }
     }
 
     return NextResponse.json({ article });

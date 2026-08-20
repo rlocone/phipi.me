@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
+import { assertPublicHttpUrl } from '@/lib/safe-url';
 import prisma from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +13,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     const feed = await prisma.rSSFeed.findUnique({
       where: { id: params.id },
     });
@@ -35,17 +40,21 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { name, feedUrl, autoFetchEnabled } = body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
-    if (feedUrl !== undefined) updateData.feedUrl = feedUrl;
+    if (feedUrl !== undefined) {
+      const publicUrl = assertPublicHttpUrl(String(feedUrl));
+      if (!publicUrl) {
+        return NextResponse.json({ error: 'Feed URL must be a public http(s) address' }, { status: 400 });
+      }
+      updateData.feedUrl = publicUrl;
+    }
     if (autoFetchEnabled !== undefined) updateData.autoFetchEnabled = autoFetchEnabled;
 
     const feed = await prisma.rSSFeed.update({
@@ -69,10 +78,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     await prisma.rSSFeed.delete({
       where: { id: params.id },
