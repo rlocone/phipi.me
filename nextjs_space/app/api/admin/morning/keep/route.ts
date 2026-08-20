@@ -7,6 +7,7 @@ import { openRouterChatCompletions } from '@/lib/openrouter';
 import { SITE_CATEGORIES, type SiteCategory } from '@/lib/morning-queue';
 import { extractYouTubeVideoId } from '@/lib/youtube';
 import { DEFAULT_ARTICLE_AUTHOR } from '@/lib/article-author';
+import { clipForPurpose } from '@/lib/llm-usage';
 import { assertPublicHttpUrl } from '@/lib/safe-url';
 
 export const dynamic = 'force-dynamic';
@@ -26,11 +27,12 @@ async function generateSummary(title: string, excerpt: string): Promise<string> 
         },
         {
           role: 'user',
-          content: `Please create a compelling 2-3 sentence summary of the following article titled "${title}":\n\n${(excerpt || title).slice(0, 4000)}\n\nProvide only the summary, no additional commentary.`,
+          content: `Please create a compelling 2-3 sentence summary of the following article titled "${title}":\n\n${clipForPurpose(excerpt || title, 'keep-summary')}\n\nProvide only the summary, no additional commentary.`,
         },
       ],
       stream: false,
-      max_tokens: 300,
+      max_tokens: 160,
+      purpose: 'keep-summary',
     });
     if (!response.ok) return PLACEHOLDER_SUMMARY;
     const data = await response.json();

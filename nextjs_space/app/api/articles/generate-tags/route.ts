@@ -36,14 +36,15 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Analyze this article titled "${title || 'Article'}" and suggest 3-6 relevant tags:\n\n${content.substring(0, 3000)}\n\nExisting tags in our system: ${tagList || 'None yet'}\n\nRespond in JSON format with the following structure:\n{\n  "tags": ["tag1", "tag2", "tag3"]\n}\n\nRespond with raw JSON only. Do not include code blocks, markdown, or any other formatting. Each tag should be lowercase, 1-3 words.`,
+        content: `Analyze this article titled "${title || 'Article'}" and suggest 3-6 relevant tags:\n\n${content.substring(0, 1400)}\n\nExisting tags in our system: ${tagList || 'None yet'}\n\nRespond in JSON format with the following structure:\n{\n  "tags": ["tag1", "tag2", "tag3"]\n}\n\nRespond with raw JSON only. Do not include code blocks, markdown, or any other formatting. Each tag should be lowercase, 1-3 words.`,
       },
     ];
 
     const response = await openRouterChatCompletions({
       messages,
       stream: true,
-      max_tokens: 200,
+      max_tokens: 80,
+      purpose: 'tags',
       response_format: { type: 'json_object' },
     });
 

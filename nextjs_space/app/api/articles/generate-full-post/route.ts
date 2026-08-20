@@ -34,14 +34,15 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Please enhance and rewrite the following article titled "${title || 'Article'}" as a comprehensive blog post for our cybersecurity and privacy audience:\n\n${content.substring(0, 8000)}${citationContext}\n\nFormat the article with:\n- An engaging introduction\n- Clear section headings\n- Key insights highlighted\n- A brief conclusion\n- Use markdown formatting\n${sources && sources.length > 0 ? '- Add citations [1], [2], etc. when referencing the additional sources above' : ''}\n\nProvide only the enhanced article content.`,
+        content: `Please enhance and rewrite the following article titled "${title || 'Article'}" as a comprehensive blog post for our cybersecurity and privacy audience:\n\n${content.substring(0, 2800)}${citationContext}\n\nFormat the article with:\n- An engaging introduction\n- Clear section headings\n- Key insights highlighted\n- A brief conclusion\n- Use markdown formatting\n${sources && sources.length > 0 ? '- Add citations [1], [2], etc. when referencing the additional sources above' : ''}\n\nProvide only the enhanced article content.`,
       },
     ];
 
     const response = await openRouterChatCompletions({
       messages,
       stream: true,
-      max_tokens: 2000,
+      max_tokens: 700,
+      purpose: 'full-post',
     });
 
     if (!response.ok) {

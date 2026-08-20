@@ -45,14 +45,15 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":\n\n${trimmedContent.substring(0, 4000)}\n\nProvide only the summary, no additional commentary.`,
+        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":\n\n${trimmedContent.substring(0, 1600)}\n\nProvide only the summary, no additional commentary.`,
       },
     ];
 
     const response = await openRouterChatCompletions({
       messages,
       stream: true,
-      max_tokens: 300,
+      max_tokens: 160,
+      purpose: 'summary',
     });
 
     if (!response.ok) {

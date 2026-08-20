@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Sunrise,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,7 @@ const navItems = [
   { href: '/admin/rss-feeds', label: 'RSS Feeds', icon: Rss },
   { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
   { href: '/admin/tags', label: 'Tags', icon: Tags },
+  { href: '/admin/usage', label: 'LLM usage', icon: BarChart3 },
   { href: '/home', label: 'View Site', icon: Globe },
 ];
 

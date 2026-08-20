@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
         { role: 'user', content: queryPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 200,
+      max_tokens: 350,
+      purpose: 'sources',
     });
 
     if (!queryResponse.ok) {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       queries = [title];
     }
 
-    const sourcePrompt = `I need to find 5 high-quality additional reading sources for an article titled: "${title}"\n\nSearch queries:\n${queries.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\nGenerate 5 relevant, authoritative sources (real or realistic) that would provide additional reading on this topic. For each source provide:\n- title: A clear, descriptive title\n- url: A realistic URL (use real domains like techcrunch.com, arstechnica.com, ieee.org, medium.com, etc.)\n- description: A brief 1-2 sentence description of what the source covers\n\nReturn ONLY a JSON array in this exact format, no other text:\n[\n  {\n    "title": "Source Title",\n    "url": "https://example.com/article",\n    "description": "Brief description"\n  }\n]\n\nIMPORTANT: Return ONLY the JSON array, no markdown, no code blocks, no other text.`;
+    const sourcePrompt = `I need to find 5 high-quality additional reading sources for an article titled: "${title}"\n\nSearch queries:\n${queries.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\nGenerate 5 relevant, authoritative sources (real or realistic) that would provide additional reading on this topic. For each source provide:\n- title: A clear, descriptive title\n- url: A realistic URL (use real domains like techcrunch.com, cirktechnica.com, ieee.org, medium.com, etc.)\n- description: A brief 1-2 sentence description of what the source covers\n\nReturn ONLY a JSON array in this exact format, no other text:\n[\n  {\n    "title": "Source Title",\n    "url": "https://example.com/article",\n    "description": "Brief description"\n  }\n]\n\nIMPORTANT: Return ONLY the JSON array, no markdown, no code blocks, no other text.`;
 
     const sourceResponse = await openRouterChatCompletions({
       messages: [
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
         { role: 'user', content: sourcePrompt },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 500,
+      purpose: 'sources',
     });
 
     if (!sourceResponse.ok) {
