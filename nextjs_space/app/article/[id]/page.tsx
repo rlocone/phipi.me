@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title: `${title} | phipi`,
     description,
     keywords: categories,
-    authors: [article.author || 'Gloria'],
+    authors: [{ name: article.author || 'Gloria' }],
     openGraph: {
       title,
       description,

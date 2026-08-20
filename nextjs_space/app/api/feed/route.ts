@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+function escapeCdata(value: string) {
+  return String(value || '').replace(/]]>/g, ']]]]><![CDATA[>');
+}
+
 // Force dynamic rendering to avoid static prerendering with DB
 export const dynamic = 'force-dynamic';
 
