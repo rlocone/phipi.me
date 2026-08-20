@@ -68,6 +68,7 @@ export async function PATCH(
     const body = await request.json();
     const { 
       title,
+      author,
       emoji, 
       rawContent, 
       aiSummary, 
@@ -96,6 +97,7 @@ export async function PATCH(
     // Update article
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
+    if (author !== undefined) updateData.author = String(author || '').trim() || 'Gloria';
     if (emoji !== undefined) updateData.emoji = emoji;
     if (rawContent !== undefined) updateData.rawContent = rawContent;
     if (aiSummary !== undefined) updateData.aiSummary = aiSummary;

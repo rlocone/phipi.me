@@ -62,6 +62,7 @@ model VerificationToken {
 model Article {
   id           String            @id @default(cuid())
   title        String
+  author       String            @default("Gloria")
   emoji        String?           // Emoji to display before title
   originalUrl  String            @unique
   rawContent   String?           @db.Text

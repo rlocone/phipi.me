@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { articleAuthor } from '@/lib/article-author';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       title, 
+      author,
       emoji,
       originalUrl, 
       rawContent, 
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
     const article = await prisma.article.create({
       data: {
         title,
+        author: articleAuthor(author),
         emoji: emoji || null,
         originalUrl,
         rawContent,

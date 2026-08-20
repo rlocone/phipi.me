@@ -11,6 +11,7 @@ import { calculateReadingTime } from '@/lib/emoji-suggester';
 type ArticleWithRelations = {
   id: string;
   title: string;
+  author: string;
   emoji: string | null;
   originalUrl: string;
   rawContent: string | null;
@@ -76,6 +77,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title: `${title} | phipi`,
     description,
     keywords: categories,
+    authors: [article.author || 'Gloria'],
     openGraph: {
       title,
       description,
@@ -165,6 +167,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
 
         {/* Metadata Bar */}
         <div className="flex flex-wrap items-center gap-4 mb-8 text-gray-400 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-purple-300">By {article.author || 'Gloria'}</span>
+          </div>
+
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <time dateTime={article.publishedAt?.toISOString() || article.createdAt.toISOString()}>

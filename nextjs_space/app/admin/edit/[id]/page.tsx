@@ -53,6 +53,7 @@ interface Tag {
 interface Article {
   id: string;
   title: string;
+  author?: string;
   emoji?: string | null;
   originalUrl: string;
   rawContent: string | null;
@@ -78,6 +79,7 @@ export default function EditArticlePage() {
 
   const [article, setArticle] = useState<Article | null>(null);
   const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('Gloria');
   const [rawContent, setRawContent] = useState('');
   const [aiSummary, setAiSummary] = useState('');
   const [aiFullPost, setAiFullPost] = useState('');
@@ -128,6 +130,7 @@ export default function EditArticlePage() {
 
       setArticle(art);
       setTitle(art.title);
+      setAuthor(art.author || 'Gloria');
       setRawContent(art.rawContent || '');
       setAiSummary(art.aiSummary || '');
       setAiFullPost(art.aiFullPost || '');
@@ -477,6 +480,7 @@ export default function EditArticlePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
+          author: author.trim() || 'Gloria',
           emoji: emoji || null,
           rawContent: rawContent || null,
           aiSummary: aiSummary || null,
@@ -569,6 +573,18 @@ export default function EditArticlePage() {
 
       <div className="space-y-6">
         {/* Title */}
+        <div>
+          <Label htmlFor="author" className="text-gray-300">
+            Author
+          </Label>
+          <Input
+            id="author"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="bg-gray-800 border-gray-700 text-white"
+          />
+        </div>
+
         <div>
           <Label htmlFor="title" className="text-gray-300">
             Title

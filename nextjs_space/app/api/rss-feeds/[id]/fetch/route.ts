@@ -5,6 +5,7 @@ import prisma from '@/lib/db';
 import Parser from 'rss-parser';
 import { parseRssContent } from '@/lib/content-parser';
 import { fetchYouTubeMetadata } from '@/lib/youtube';
+import { DEFAULT_ARTICLE_AUTHOR } from '@/lib/article-author';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,7 @@ export async function POST(
         // Prepare article data
         const articleData: any = {
           title: item.title || 'Untitled',
+          author: DEFAULT_ARTICLE_AUTHOR,
           originalUrl: item.link,
           rawContent: parsed.cleanText || rawContent,
           status: 'DRAFT',

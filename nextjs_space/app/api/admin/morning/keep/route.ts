@@ -5,6 +5,7 @@ import prisma from '@/lib/db';
 import { openRouterChatCompletions } from '@/lib/openrouter';
 import { SITE_CATEGORIES, type SiteCategory } from '@/lib/morning-queue';
 import { extractYouTubeVideoId } from '@/lib/youtube';
+import { DEFAULT_ARTICLE_AUTHOR } from '@/lib/article-author';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
     const article = await prisma.article.create({
       data: {
         title,
+        author: DEFAULT_ARTICLE_AUTHOR,
         originalUrl,
         rawContent: excerpt || null,
         aiSummary: summary,
