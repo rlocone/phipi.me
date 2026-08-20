@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/db';
+import { getOptionalSession, requireAdmin } from '@/lib/require-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,13 @@ export async function GET(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
 
+    if (article.status !== 'APPROVED') {
+      const auth = await requireAdmin();
+      if (auth.error) {
+        return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+      }
+    }
+
     return NextResponse.json({ article });
   } catch (error) {
     console.error('Error fetching article:', error);
@@ -60,14 +68,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { 
       title,
+      author,
       emoji, 
       rawContent, 
       aiSummary, 
@@ -96,11 +103,12 @@ export async function PATCH(
     // Update article
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
+    if (author !== undefined) updateData.author = String(author || '').trim() || 'Gloria';
     if (emoji !== undefined) updateData.emoji = emoji;
     if (rawContent !== undefined) updateData.rawContent = rawContent;
     if (aiSummary !== undefined) updateData.aiSummary = aiSummary;
     if (aiFullPost !== undefined) updateData.aiFullPost = aiFullPost;
-    if (status !== undefined) updateData.status = status;
+    // Status changes go through /approve. Ignore client status here.
     if (isStarred !== undefined) updateData.isStarred = isStarred;
     if (publishedAt !== undefined) updateData.publishedAt = publishedAt;
     if (images !== undefined) updateData.images = images;
@@ -196,10 +204,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     await prisma.article.delete({
       where: { id: params.id },

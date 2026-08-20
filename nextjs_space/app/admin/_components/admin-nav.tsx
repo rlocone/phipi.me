@@ -14,17 +14,21 @@ import {
   LogOut,
   Menu,
   X,
+  Sunrise,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: Shield },
+  { href: '/admin/morning', label: 'Morning queue', icon: Sunrise },
   { href: '/admin/submit', label: 'Submit Article', icon: FileText },
   { href: '/admin/review', label: 'Review Content', icon: FileText },
   { href: '/admin/rss-feeds', label: 'RSS Feeds', icon: Rss },
   { href: '/admin/categories', label: 'Categories', icon: FolderOpen },
   { href: '/admin/tags', label: 'Tags', icon: Tags },
+  { href: '/admin/usage', label: 'LLM usage', icon: BarChart3 },
   { href: '/home', label: 'View Site', icon: Globe },
 ];
 
@@ -49,7 +53,7 @@ export default function AdminNav() {
           <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}
@@ -90,7 +94,7 @@ export default function AdminNav() {
           <div className="md:hidden py-4 space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(`${item.href}/`));
               return (
                 <Link
                   key={item.href}

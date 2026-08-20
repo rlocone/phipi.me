@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
 import prisma from '@/lib/db';
 import { extractImagesFromHTML, extractMetaImages, getBestImages, getValidImages } from '@/lib/image-extractor';
 
@@ -10,10 +11,8 @@ export const maxDuration = 300; // 5 minutes for processing multiple articles
 // POST - Backfill images for articles without images
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     // Find all articles without images (and not videos)
     const articles = await prisma.article.findMany({
@@ -113,10 +112,8 @@ export async function POST(request: NextRequest) {
 // GET - Check how many articles need image backfill
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const count = await prisma.article.count({
       where: {

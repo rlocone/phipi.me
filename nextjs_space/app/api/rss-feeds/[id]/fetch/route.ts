@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
+import { assertPublicHttpUrl } from '@/lib/safe-url';
 import prisma from '@/lib/db';
 import Parser from 'rss-parser';
 import { parseRssContent } from '@/lib/content-parser';
 import { fetchYouTubeMetadata } from '@/lib/youtube';
+import { DEFAULT_ARTICLE_AUTHOR } from '@/lib/article-author';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +19,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const feed = await prisma.rSSFeed.findUnique({
       where: { id: params.id },
@@ -30,6 +31,9 @@ export async function POST(
     }
 
     // Parse RSS feed
+    if (!assertPublicHttpUrl(feed.feedUrl)) {
+      return NextResponse.json({ error: 'Feed URL is not a public http(s) address' }, { status: 400 });
+    }
     const rssFeed = await parser.parseURL(feed.feedUrl);
     const articles = [];
     const errors = [];
@@ -55,6 +59,7 @@ export async function POST(
         // Prepare article data
         const articleData: any = {
           title: item.title || 'Untitled',
+          author: DEFAULT_ARTICLE_AUTHOR,
           originalUrl: item.link,
           rawContent: parsed.cleanText || rawContent,
           status: 'DRAFT',

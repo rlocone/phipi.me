@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/require-admin';
 import { openRouterChatCompletions } from '@/lib/openrouter';
 
 export const dynamic = 'force-dynamic';
@@ -8,13 +9,8 @@ export const dynamic = 'force-dynamic';
 // POST - Generate AI summary (streaming)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const { content, title } = body;
@@ -49,14 +45,15 @@ export async function POST(request: NextRequest) {
       },
       {
         role: 'user',
-        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":\n\n${trimmedContent.substring(0, 4000)}\n\nProvide only the summary, no additional commentary.`,
+        content: `Please create a compelling 2-3 sentence summary of the following article titled "${title || 'Article'}":\n\n${trimmedContent.substring(0, 1600)}\n\nProvide only the summary, no additional commentary.`,
       },
     ];
 
     const response = await openRouterChatCompletions({
       messages,
       stream: true,
-      max_tokens: 300,
+      max_tokens: 160,
+      purpose: 'summary',
     });
 
     if (!response.ok) {

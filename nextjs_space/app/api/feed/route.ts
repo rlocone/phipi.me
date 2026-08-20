@@ -77,8 +77,8 @@ export async function GET() {
       <link>${siteUrl}/article/${article.id}</link>
       <guid isPermaLink="true">${siteUrl}/article/${article.id}</guid>
       <pubDate>${pubDate.toUTCString()}</pubDate>
-      <description><![CDATA[${description}]]></description>
-      <content:encoded><![CDATA[${article.aiFullPost || description}]]></content:encoded>`;
+      <description><![CDATA[${escapeCdata(description)}]]></description>
+      <content:encoded><![CDATA[${escapeCdata(article.aiFullPost || description)}]]></content:encoded>`;
 
     // Add categories
     allCategories.forEach((cat) => {
