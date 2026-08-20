@@ -261,21 +261,21 @@ export default function MorningQueueClient() {
 
   return (
     <div
-      className="-mx-4 -my-8 min-h-screen px-4 py-8 sm:px-6"
+      className="-mx-4 -my-8 min-h-screen overflow-x-hidden px-4 py-8 sm:px-6"
       style={{ background: COLORS.bg, color: COLORS.text, fontFamily: 'Inter, ui-sans-serif, system-ui' }}
     >
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <div className="mb-4 flex items-baseline gap-3">
-              <span className="text-2xl font-semibold tracking-tight" style={{ color: COLORS.violetSoft }}>
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 flex items-baseline gap-3">
+              <span className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: COLORS.violetSoft }}>
                 phipi
               </span>
               <span className="text-sm" style={{ color: COLORS.muted }}>
                 Love of Tech
               </span>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight">Morning queue</h1>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">Morning queue</h1>
             <p className="mt-2 text-sm" style={{ color: COLORS.muted }}>
               {formatMetaDate(payload?.generatedAt)} · {items.filter((i) => i.state !== 'tossed').length} in queue · {busyLabel}
               {payload?.usedFixture ? ' · fixture data' : ''}
@@ -398,10 +398,10 @@ export default function MorningQueueClient() {
         )}
 
         <footer
-          className="mt-10 flex items-center justify-between rounded-lg px-4 py-3 text-sm"
+          className="mt-10 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
           style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, color: COLORS.muted }}
         >
-          <span>Keeps process as you go · last toss undoes · auto-queues on the last row</span>
+          <span className="leading-relaxed">Keeps process as you go. Last toss undoes.</span>
           <button
             type="button"
             onClick={undoToss}
@@ -449,14 +449,15 @@ function QueueRow({
     <div>
       <div
         onClick={onActivate}
-        className="flex cursor-pointer items-center gap-4 rounded-lg px-4 py-3"
+        className="flex cursor-pointer flex-col gap-3 rounded-lg px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4"
         style={{
           background: COLORS.card,
           border: `1px solid ${active ? COLORS.violet : COLORS.border}`,
           borderRadius: 8,
         }}
       >
-        <div className="flex w-8 flex-col items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+        <div className="flex w-6 shrink-0 flex-col items-center gap-2 sm:w-8">
           {typeof index === 'number' && (
             <span className="text-xs" style={{ color: COLORS.muted }}>
               {index}
@@ -493,13 +494,14 @@ function QueueRow({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate font-medium">{item.title}</div>
+          <div className="line-clamp-2 font-medium leading-snug sm:truncate">{item.title}</div>
           <div className="text-sm" style={{ color: COLORS.muted }}>
             from {item.originLabel}
           </div>
         </div>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           {item.state === 'kept' && (
             <span
               className="rounded-md px-3 py-1.5 text-sm"
@@ -521,10 +523,10 @@ function QueueRow({
                   e.stopPropagation();
                   onKeep();
                 }}
-                className="rounded-md px-3 py-1.5 text-sm font-medium"
+                className="min-h-10 flex-1 rounded-md px-3 py-2 text-sm font-medium sm:min-h-0 sm:flex-none sm:py-1.5"
                 style={{ background: COLORS.violet, color: COLORS.text }}
               >
-                Keep <span className="opacity-70">K</span>
+                Keep <span className="hidden opacity-70 sm:inline">K</span>
               </button>
               <button
                 type="button"
@@ -532,21 +534,19 @@ function QueueRow({
                   e.stopPropagation();
                   onToss();
                 }}
-                className="rounded-md px-3 py-1.5 text-sm"
+                className="min-h-10 flex-1 rounded-md px-3 py-2 text-sm sm:min-h-0 sm:flex-none sm:py-1.5"
                 style={{ border: `1px solid ${COLORS.border}`, color: COLORS.text }}
               >
-                Toss <span className="opacity-70">T</span>
+                Toss <span className="hidden opacity-70 sm:inline">T</span>
               </button>
             </>
           )}
-        </div>
-
         <select
           value={item.category}
           disabled={item.state === 'kept' || item.state === 'keeping'}
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => onCategory(item.id, e.target.value as SiteCategory)}
-          className="rounded-full bg-transparent px-3 py-1 text-xs"
+          className="rounded-full bg-transparent px-3 py-2 text-xs sm:py-1"
           style={{ border: `1px solid ${COLORS.border}`, color: COLORS.text }}
         >
           {SITE_CATEGORIES.map((cat) => (
@@ -555,6 +555,7 @@ function QueueRow({
             </option>
           ))}
         </select>
+        </div>
 
         {showExtra && item.extraReading && (
           <a
