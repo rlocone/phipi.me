@@ -1,4 +1,7 @@
 import prisma from '@/lib/db';
+import { ET_TIMEZONE as ET, etYmd, etYesterdayYmd } from '@/lib/et-date';
+
+export { etYmd, etYesterdayYmd };
 
 export type LlmPurpose = 'summary' | 'keep-summary' | 'tags' | 'full-post' | 'sources';
 
@@ -9,8 +12,6 @@ export const LLM_BUDGETS: Record<LlmPurpose, { maxTokens: number; inputChars: nu
   'full-post': { maxTokens: 700, inputChars: 2800 },
   sources: { maxTokens: 500, inputChars: 900 },
 };
-
-const ET = 'America/New_York';
 
 export function clipForPurpose(text: string, purpose: LlmPurpose) {
   return String(text || '').slice(0, LLM_BUDGETS[purpose].inputChars);
@@ -68,21 +69,6 @@ export async function recordLlmUsage(entry: {
   } catch (error) {
     console.warn('Failed to record LLM usage', error);
   }
-}
-
-export function etYmd(date = new Date()) {
-  return date.toLocaleDateString('en-CA', { timeZone: ET });
-}
-
-export function etYesterdayYmd(now = new Date()) {
-  const today = etYmd(now);
-  const probe = new Date(now.getTime() - 36 * 60 * 60 * 1000);
-  for (let i = 0; i < 48; i += 1) {
-    const d = new Date(probe.getTime() + i * 60 * 60 * 1000);
-    const ymd = etYmd(d);
-    if (ymd < today) return ymd;
-  }
-  return today;
 }
 
 export function dailyTokenWarnLimit() {
