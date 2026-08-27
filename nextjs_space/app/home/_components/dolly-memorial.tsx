@@ -3,7 +3,7 @@ export default function DollyMemorial() {
     <section className="bg-transparent">
       <div className="max-w-3xl mx-auto">
         <img
-          src="/kenny-dolly.png"
+          src="/kenny-dolly.jpg"
           alt="Kenny Rogers and Dolly Parton, together again"
           className="block w-full rounded-2xl"
         />
