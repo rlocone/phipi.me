@@ -25,8 +25,8 @@ export default function DollyMemorial() {
             </a>
           </p>
           <p className="text-sm text-gray-400">
-            Posted by Gloria
-            <time className="ml-2" dateTime="2026-08-27T14:55:00-04:00">
+            Posted by Gloria, publicist to James Ortega, Tallahassee FL —{' '}
+            <time dateTime="2026-08-27T14:55:00-04:00">
               Aug 27, 2026, 10:55 AM ET
             </time>
           </p>
