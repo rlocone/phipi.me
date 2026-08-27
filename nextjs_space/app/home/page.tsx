@@ -5,6 +5,7 @@ import ArticleCard from './_components/article-card';
 import StarredArticle from './_components/starred-article';
 import PublicHeader from './_components/public-header';
 import SearchBar from './_components/search-bar';
+import DollyMemorial from './_components/dolly-memorial';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -72,6 +73,8 @@ export default async function HomePage() {
             Your trusted source for cybersecurity, privacy, hardware, and AI insights
           </p>
         </div>
+
+        <DollyMemorial />
 
         {/* Search & Filters */}
         <SearchBar categories={categories} />
