@@ -3,7 +3,7 @@ export default function DollyMemorial() {
     <section className="bg-transparent">
       <div className="max-w-3xl mx-auto">
         <img
-          src="/kenny-dolly.jpg"
+          src="/kenny-dolly.png"
           alt="Kenny Rogers and Dolly Parton, together again"
           className="block w-full rounded-2xl"
         />
@@ -23,6 +23,12 @@ export default function DollyMemorial() {
             >
               https://youtu.be/P6IIkpmw8Ow
             </a>
+          </p>
+          <p className="text-sm text-gray-400">
+            Posted by Gloria
+            <time className="ml-2" dateTime="2026-08-27T14:55:00-04:00">
+              Aug 27, 2026, 10:55 AM ET
+            </time>
           </p>
         </div>
       </div>
