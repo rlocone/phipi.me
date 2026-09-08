@@ -1,4 +1,4 @@
-import { Calendar, ExternalLink, ArrowLeft, Clock, BookOpen } from 'lucide-react';
+import { ExternalLink, ArrowLeft, Clock, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import prisma from '@/lib/db';
 import PublicHeader from '@/app/home/_components/public-header';
@@ -7,11 +7,13 @@ import ReactMarkdown from 'react-markdown';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { calculateReadingTime } from '@/lib/emoji-suggester';
+import { gloriaPublicByline, publishedAtEtIso } from '@/lib/gloria-byline';
 
 type ArticleWithRelations = {
   id: string;
   title: string;
   author: string;
+  preparedBy: string | null;
   emoji: string | null;
   originalUrl: string;
   rawContent: string | null;
@@ -165,33 +167,41 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           {article.title}
         </h1>
 
-        {/* Metadata Bar */}
-        <div className="flex flex-wrap items-center gap-4 mb-8 text-gray-400 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-purple-300">By {article.author || 'Gloria'}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            <time dateTime={article.publishedAt?.toISOString() || article.createdAt.toISOString()}>
-              {(article.publishedAt || article.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </time>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            <span>{readingTime} min read</span>
-          </div>
-
-          {article.channelName && (
-            <div className="flex items-center gap-2">
-              <span className="text-purple-400">{article.channelName}</span>
-            </div>
+        {/* Metadata / Gloria public byline */}
+        <div className="mb-8 space-y-3 text-gray-400 text-sm">
+          <p className="text-purple-200 leading-relaxed">
+            {(() => {
+              const when = article.publishedAt || article.createdAt;
+              const label = gloriaPublicByline(when);
+              const iso = publishedAtEtIso(when);
+              const parts = label.split(' — ');
+              if (parts.length === 2 && iso) {
+                return (
+                  <>
+                    {parts[0]} —{' '}
+                    <time dateTime={iso}>{parts[1]}</time>
+                  </>
+                );
+              }
+              return label;
+            })()}
+          </p>
+          {article.preparedBy && (
+            <p className="text-gray-400">
+              Prepared by <span className="text-purple-300">{article.preparedBy}</span>
+            </p>
           )}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>{readingTime} min read</span>
+            </div>
+            {article.channelName && (
+              <div className="flex items-center gap-2">
+                <span className="text-purple-400">{article.channelName}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Categories and Tags */}
