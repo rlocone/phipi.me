@@ -75,6 +75,7 @@ export async function PATCH(
     const { 
       title,
       author,
+      preparedBy,
       emoji, 
       rawContent, 
       aiSummary, 
@@ -104,6 +105,12 @@ export async function PATCH(
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (author !== undefined) updateData.author = String(author || '').trim() || 'Gloria';
+    if (preparedBy !== undefined) {
+      updateData.preparedBy =
+        preparedBy === null || preparedBy === ''
+          ? null
+          : String(preparedBy).trim() || null;
+    }
     if (emoji !== undefined) updateData.emoji = emoji;
     if (rawContent !== undefined) updateData.rawContent = rawContent;
     if (aiSummary !== undefined) updateData.aiSummary = aiSummary;

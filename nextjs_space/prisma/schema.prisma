@@ -63,6 +63,7 @@ model Article {
   id           String            @id @default(cuid())
   title        String
   author       String            @default("Gloria")
+  preparedBy   String?           // preparing bot name (e.g. Bianca)
   emoji        String?           // Emoji to display before title
   originalUrl  String            @unique
   rawContent   String?           @db.Text
