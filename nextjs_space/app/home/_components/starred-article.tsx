@@ -2,6 +2,7 @@ import { Star, Calendar, ExternalLink, Clock } from 'lucide-react';
 import Link from 'next/link';
 import ShareButtons from './share-buttons';
 import { calculateReadingTime } from '@/lib/emoji-suggester';
+import { formatPublishedAtEt } from '@/lib/gloria-byline';
 
 export default function StarredArticle({ article }: { article: any }) {
   const content = article.aiFullPost || article.rawContent || article.aiSummary || '';
@@ -76,7 +77,7 @@ export default function StarredArticle({ article }: { article: any }) {
           {article.publishedAt && (
             <span className="flex items-center text-gray-400 text-sm">
               <Calendar className="w-4 h-4 mr-1" />
-              {new Date(article.publishedAt).toLocaleDateString()}
+              {formatPublishedAtEt(article.publishedAt)}
             </span>
           )}
           <span className="flex items-center text-gray-400 text-sm">

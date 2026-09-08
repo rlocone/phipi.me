@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
     const { 
       title, 
       author,
+      preparedBy,
       emoji,
       originalUrl, 
       rawContent, 
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         author: articleAuthor(author),
+        preparedBy: typeof preparedBy === 'string' && preparedBy.trim() ? preparedBy.trim() : null,
         emoji: emoji || null,
         originalUrl,
         rawContent,
