@@ -4,6 +4,7 @@ import prisma from '@/lib/db';
 import PublicHeader from '@/app/home/_components/public-header';
 import ShareButtons from '@/app/home/_components/share-buttons';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { calculateReadingTime } from '@/lib/emoji-suggester';
@@ -236,6 +237,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             </div>
           ) : (
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mb-4 mt-8 text-white" {...props} />,
                 h2: ({ node, ...props }) => <h2 className="text-2xl font-bold mb-3 mt-6 text-white" {...props} />,
@@ -261,6 +263,23 @@ export default async function ArticlePage({ params }: { params: { id: string } }
                 ),
                 blockquote: ({ node, ...props }) => (
                   <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-400 my-4" {...props} />
+                ),
+                table: ({ node, ...props }) => (
+                  <div className="overflow-x-auto mb-4">
+                    <table className="w-full border-collapse" {...props} />
+                  </div>
+                ),
+                thead: ({ node, ...props }) => (
+                  <thead className="border-b border-purple-500/30" {...props} />
+                ),
+                th: ({ node, ...props }) => (
+                  <th className="border border-purple-500/30 px-4 py-2 text-left font-semibold text-purple-200" {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td className="border border-purple-500/30 px-4 py-2 text-gray-300" {...props} />
+                ),
+                tr: ({ node, ...props }) => (
+                  <tr className="border-b border-purple-500/30" {...props} />
                 ),
               }}
             >
