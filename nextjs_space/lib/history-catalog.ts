@@ -1,3 +1,9 @@
+export type HistoryReading = {
+  title: string;
+  url: string;
+  description?: string;
+};
+
 export type HistoryItem = {
   id: string;
   title: string;
@@ -8,6 +14,8 @@ export type HistoryItem = {
   /** ISO datetime when known; omit rather than inventing a time */
   publishedAt?: string;
   summary?: string;
+  /** Up to 3 related articles shown under the video */
+  additionalReading?: HistoryReading[];
 };
 
 /**
@@ -23,6 +31,25 @@ export const historyCatalog: HistoryItem[] = [
     originalUrl: 'https://youtu.be/lSRxce3guuY',
     thumbnailUrl: 'https://i.ytimg.com/vi/lSRxce3guuY/hqdefault.jpg',
     summary:
-      'A look back at Windows 95 — the OS that put the Start menu on every PC and reshaped personal computing.',
+      'A look back at Windows 95 — the OS that put the Start menu on every PC and reshaped personal computing. US air traffic control has still been running systems on Windows 95 and floppy disks (plus paper strips), and the FAA has been working to retire that stack.',
+    additionalReading: [
+      {
+        title: 'US air traffic control still runs on Windows 95 and floppy disks',
+        url: 'https://arstechnica.com/information-technology/2025/06/faa-to-retire-floppy-disks-and-windows-95-amid-air-traffic-control-overhaul/',
+        description:
+          'Ars Technica on FAA plans to replace Win95/floppy ATC systems after Rocheleau\u2019s House testimony.',
+      },
+      {
+        title: 'FAA finally replacing floppy disks and Windows 95 in air traffic control systems',
+        url: 'https://www.techspot.com/news/108229-faa-finally-replacing-floppy-disks-windows-95-air.html',
+        description: 'TechSpot on why legacy ATC gear persists and the push to modernize.',
+      },
+      {
+        title: "'No more floppy disks': Air traffic control overhaul faces some daunting obstacles",
+        url: 'https://www.npr.org/2025/06/06/nx-s1-5424682/air-traffic-control-overhaul',
+        description:
+          'NPR on Win95, floppies, paper strips still in towers, and modernization hurdles.',
+      },
+    ],
   },
 ];

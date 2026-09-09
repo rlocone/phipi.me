@@ -68,6 +68,64 @@ export default function HistoryPage() {
                     <p className="text-gray-400 text-sm leading-relaxed">{item.summary}</p>
                   )}
 
+                  {item.additionalReading && item.additionalReading.length > 0 && (
+                    <div className="bg-gray-900/50 border border-purple-500/20 rounded-lg p-6 mt-2">
+                      <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                        <BookOpen className="w-5 h-5 text-purple-400" />
+                        Additional Reading
+                      </h3>
+                      <p className="text-gray-400 mb-4 text-sm">
+                        Explore these related sources for more in-depth information on this topic.
+                      </p>
+                      <div className="space-y-3">
+                        {item.additionalReading.slice(0, 3).map((reading, index) => {
+                          const safeHref =
+                            typeof reading.url === 'string' && /^https:\/\//i.test(reading.url)
+                              ? reading.url
+                              : undefined;
+                          let hostname = '';
+                          try {
+                            hostname = safeHref ? new URL(safeHref).hostname : '';
+                          } catch {
+                            hostname = '';
+                          }
+
+                          return (
+                            <a
+                              key={`${reading.url}-${index}`}
+                              href={safeHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-purple-500/30 rounded-lg p-4 transition-all group"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-6 h-6 bg-purple-600/20 text-purple-300 rounded-full flex items-center justify-center text-sm font-semibold">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-white font-semibold mb-1 group-hover:text-purple-300 transition-colors">
+                                    {reading.title}
+                                  </h4>
+                                  {reading.description && (
+                                    <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                                      {reading.description}
+                                    </p>
+                                  )}
+                                  {hostname && (
+                                    <div className="flex items-center gap-1 text-purple-400 text-sm">
+                                      <ExternalLink className="w-3 h-3" />
+                                      <span className="truncate">{hostname}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-xs text-gray-500">
                     {datetime ? (
                       <time dateTime={datetime}>{byline}</time>
