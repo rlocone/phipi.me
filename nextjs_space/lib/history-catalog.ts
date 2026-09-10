@@ -52,4 +52,14 @@ export const historyCatalog: HistoryItem[] = [
       },
     ],
   },
+  {
+    id: 'ibm-os2-pc-war',
+    title: 'What Happened to OS/2? IBM\u2019s Operating System That Lost the PC War',
+    videoId: 'qdwsw_kO56o',
+    channelName: 'America\u2019s Lost Technology',
+    originalUrl: 'https://youtu.be/qdwsw_kO56o',
+    thumbnailUrl: 'https://i.ytimg.com/vi/qdwsw_kO56o/hqdefault.jpg',
+    summary:
+      'OS/2 was IBM\u2019s ambitious PC operating system — technically strong, but it lost the desktop war to Microsoft Windows and faded from mainstream use.',
+  },
 ];
