@@ -60,6 +60,25 @@ export const historyCatalog: HistoryItem[] = [
     originalUrl: 'https://youtu.be/qdwsw_kO56o',
     thumbnailUrl: 'https://i.ytimg.com/vi/qdwsw_kO56o/hqdefault.jpg',
     summary:
-      'OS/2 was IBM\u2019s ambitious PC operating system — technically strong, but it lost the desktop war to Microsoft Windows and faded from mainstream use.',
+      'OS/2 was IBM\u2019s ambitious PC operating system — technically strong, but it lost the desktop war to Microsoft Windows and faded from mainstream use. Lingering Warp-class systems still turned up in legacy deployments: NYC MTA MetroCard systems long ran on OS/2; ATMs were a famous Warp install base; and ArcaOS (Arca Noae) still supports Warp 4.52-based deployments for enterprises that never left.',
+    additionalReading: [
+      {
+        title: 'Subway History: How OS/2 Powered The NYC Subway For Decades',
+        url: 'https://tedium.co/2019/06/13/nyc-subway-os2-history/',
+        description:
+          'Tedium on OS/2 as the quiet backbone of MetroCard — still running while MetroCards were accepted.',
+      },
+      {
+        title: 'The MTA MetroCard System Runs on OS/2',
+        url: 'https://stephen.nyc/2025/03/the-mta-metrocard-system-runs-on-os-2/',
+        description: '2025 recap of why MetroCard\u2019s stack stuck with OS/2 for decades.',
+      },
+      {
+        title: 'Arca Noae FAQ: Is OS/2 still being used today?',
+        url: 'https://www.arcanoae.com/faq/',
+        description:
+          'Arca Noae on enterprises, ATMs, and industrial users still on OS/2-class systems; ArcaOS continues Warp 4.52 support.',
+      },
+    ],
   },
 ];
