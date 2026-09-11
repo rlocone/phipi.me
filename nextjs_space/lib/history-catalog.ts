@@ -81,4 +81,34 @@ export const historyCatalog: HistoryItem[] = [
       },
     ],
   },
+  {
+    id: 'we-need-to-talk-ai-researchers',
+    title: 'We need to talk about this...',
+    videoId: 'jQIeVznGG3k',
+    channelName: 'Matthew Berman',
+    originalUrl: 'https://youtu.be/jQIeVznGG3k',
+    thumbnailUrl: 'https://i.ytimg.com/vi/jQIeVznGG3k/hqdefault.jpg',
+    summary:
+      'Matthew Berman covers OpenAI\u2019s claim that agents with a next-generation model produced a Navier-Stokes Millennium Prize solution — and the wave of AI-researcher posts that followed, including resignations and frank talk about extinction risk from people who trained frontier models.',
+    additionalReading: [
+      {
+        title: 'Jacob Coxon resigns from Anthropic',
+        url: 'https://x.com/hilbertspaess/status/2097476196791709843',
+        description:
+          'Pretraining researcher (OpenAI + Anthropic) resigns; says neither lab is acting responsibly as they race toward self-improving superintelligence.',
+      },
+      {
+        title: 'Evan Hubinger on AI extinction risk',
+        url: 'https://x.com/EvanHub/status/2097497037956891126',
+        description:
+          'Anthropic alignment researcher agrees with Coxon; personally puts greater than 10% chance AI kills all humans within a decade.',
+      },
+      {
+        title: 'OpenAI on a Navier-Stokes Millennium Prize solution',
+        url: 'https://x.com/OpenAI/status/2097374640582668336',
+        description:
+          'OpenAI posts that agents using a next-gen model produced a solution to the Navier-Stokes Millennium Prize Problem — the claim Berman\u2019s video reacts to.',
+      },
+    ],
+  },
 ];
